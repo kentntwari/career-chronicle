@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --site-background: 240deg 3% 93%;
+    --top-navigation-background: 216deg 43% 95%;
+
+    --logo: 216deg 43% 50%;
+    --body: 37deg 33% 20%;
+    --crash-notice: 37deg 33% 38%;
+  }
+}
