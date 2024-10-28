@@ -1,0 +1,169 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  firstName     String         @map("first_name")
+  lastName      String         @map("last_name")
+  email         String         @unique
+  organizations Organization[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  plan          Plan?          @relation(fields: [planId], references: [id])
+  planId        String?        @map("plan_id")
+
+  @@index([id, email], name: "user_idx")
+  @@map("user")
+}
+
+model Plan {
+  id               String @id @default(cuid())
+  tier             Tier   @default(FREE)
+  maxOrganizations Int    @default(5) @map("max_organizations")
+  maxPositions     Int    @default(10) @map("max_positions")
+  maxAchievements  Int    @default(20) @map("max_achievements")
+  maxChallenges    Int    @default(20) @map("max_challenges")
+  maxProjects      Int    @default(20) @map("max_projects")
+  maxFailures      Int    @default(20) @map("max_failures")
+  users            User[]
+
+  @@index([id], name: "plan_idx")
+}
+
+model Organization {
+  id        String     @id @default(cuid())
+  name      String     @db.VarChar(250)
+  slug      String     @unique
+  positions Position[]
+  user      User?      @relation(fields: [userId], references: [id])
+  userId    String?    @map("user_id")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  @@index([id, slug], name: "organization_idx")
+  @@map("organization")
+}
+
+model Position {
+  id             String        @id @default(cuid())
+  title          String        @db.VarChar(250)
+  slug           String        @unique
+  description    String?       @db.VarChar(500)
+  achievements   Achievement[]
+  failures       Failure[]
+  challenges     Challenge[]
+  projects       Project[]
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organizationId String?       @map("organization_id")
+  monthStartedAt Month         @default(JANUARY) @map("month_started_at")
+  yearStartedAt  Int           @default(1950) @map("year_started_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@index([id, slug], name: "position_idx")
+  @@map("position")
+}
+
+model Achievement {
+  id          String  @id @default(cuid())
+  title       String  @db.VarChar(250)
+  slug        String  @unique
+  description String? @db.VarChar(1000)
+
+  position       Position? @relation(fields: [positionId], references: [id])
+  positionId     String?   @map("position_id")
+  monthOccuredAt Month?    @map("month_occured_at")
+  yearOccuredAt  Int?      @map("year_occured_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([id, slug], name: "achievement_idx")
+  @@map("achievement")
+}
+
+model Failure {
+  id             String    @id @default(cuid())
+  title          String    @db.VarChar(250)
+  slug           String    @unique
+  description    String?   @db.VarChar(1000)
+  position       Position? @relation(fields: [positionId], references: [id])
+  positionId     String?   @map("position_id")
+  monthOccuredAt Month?    @map("month_occured_at")
+  yearOccuredAt  Int?      @map("year_occured_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([id, slug], name: "failure_idx")
+  @@map("failure")
+}
+
+model Challenge {
+  id             String    @id @default(cuid())
+  title          String    @db.VarChar(250)
+  slug           String    @unique
+  description    String?   @db.VarChar(1000)
+  isAchievement  Boolean   @default(false) @map("is_achievement")
+  isFailure      Boolean   @default(false) @map("is_failure")
+  isProject      Boolean   @default(false) @map("is_project")
+  position       Position? @relation(fields: [positionId], references: [id])
+  positionId     String?   @map("position_id")
+  monthOccuredAt Month?    @map("month_occured_at")
+  yearOccuredAt  Int?      @map("year_occured_at")
+  monthSolvedAt  Month?    @map("month_solved_at")
+  yearSolvedAt   Int?      @map("year_solved_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([id, slug], name: "challenge_idx")
+  @@map("challenges")
+}
+
+model Project {
+  id            String    @id @default(cuid())
+  title         String    @db.VarChar(250)
+  slug          String    @unique
+  description   String?   @db.VarChar(1000)
+  isAchievement Boolean   @default(false) @map("is_achievement")
+  isFailure     Boolean   @default(false) @map("is_failure")
+  position      Position? @relation(fields: [positionId], references: [id])
+  positionId    String?   @map("position_id")
+  startedAt     DateTime? @map("started_at")
+  finishedAt    DateTime? @map("finished_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@index([id, slug], name: "project_idx")
+  @@map("project")
+}
+
+enum Tier {
+  FREE
+  PRO
+}
+
+enum Month {
+  JANUARY
+  FEBRUARY
+  MARCH
+  APRIL
+  MAY
+  JUNE
+  JULY
+  AUGUST
+  SEPTEMBER
+  OCTOBER
+  NOVEMBER
+  DECEMBER
+}
