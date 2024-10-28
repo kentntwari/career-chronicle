@@ -5,10 +5,14 @@
 @layer base {
   :root {
     --site-background: 240deg 3% 93%;
-    --top-navigation-background: 216deg 43% 95%;
 
+    --top-navigation-background: 216deg 43% 95%;
+    --info-background: 216deg 43% 66%;
     --logo: 216deg 43% 50%;
+
     --body: 37deg 33% 20%;
     --crash-notice: 37deg 33% 38%;
+
+    --info-text: 217deg 16% 29%;
   }
 }
