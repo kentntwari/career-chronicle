@@ -1,4 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+
+import type { NuxtPage } from "nuxt/schema";
+
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   app: {
@@ -11,8 +14,22 @@ export default defineNuxtConfig({
       ],
     },
   },
+  // TODO: define middlewares for pages here
+  // above nitro, in the hooks
+  nitro: {
+    storage: {
+      data: { driver: "vercelKV", ttl: 60 * 60 * 24 * 30 },
+    },
+  },
   devtools: { enabled: true },
-  modules: ["@nuxtjs/tailwindcss", "@nuxtjs/kinde", "radix-vue/nuxt"],
+  modules: [
+    "@nuxtjs/tailwindcss",
+    "@nuxtjs/kinde",
+    "radix-vue/nuxt",
+    "nuxt-lucide-icons",
+    "@vee-validate/nuxt",
+    "@nuxtjs/html-validator",
+  ],
 
   tailwindcss: {
     // cssPath: "~/assets/css/tailwind.css",
@@ -130,6 +147,8 @@ export default defineNuxtConfig({
           "top-nav": "hsl(var(--top-navigation-background))",
           logo: "hsl(var(--logo))",
           body: "hsl(var(--body))",
+          "info-bg": "hsl(var(--info-background))",
+          "info-text": "hsl(var(--info-text))",
           "crash-notice": "hsl(var(--crash-notice))",
           "neutral-grey": {
             100: "#fdfdfd",
@@ -190,6 +209,36 @@ export default defineNuxtConfig({
             1100: "#711111",
             1200: "#4b0b0b",
             1300: "#260606",
+          },
+        },
+        extend: {
+          keyframes: {
+            slideDownAndFade: {
+              from: { opacity: "0", transform: "translateY(-2px)" },
+              to: { opacity: "1", transform: "translateY(0)" },
+            },
+            slideLeftAndFade: {
+              from: { opacity: "0", transform: "translateX(2px)" },
+              to: { opacity: "1", transform: "translateX(0)" },
+            },
+            slideUpAndFade: {
+              from: { opacity: "0", transform: "translateY(2px)" },
+              to: { opacity: "1", transform: "translateY(0)" },
+            },
+            slideRightAndFade: {
+              from: { opacity: "0", transform: "translateX(-2px)" },
+              to: { opacity: "1", transform: "translateX(0)" },
+            },
+          },
+          animation: {
+            slideDownAndFade:
+              "slideDownAndFade 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+            slideLeftAndFade:
+              "slideLeftAndFade 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+            slideUpAndFade:
+              "slideUpAndFade 400ms cubic-bezier(0.16, 1, 0.3, 1)",
+            slideRightAndFade:
+              "slideRightAndFade 400ms cubic-bezier(0.16, 1, 0.3, 1)",
           },
         },
       },
