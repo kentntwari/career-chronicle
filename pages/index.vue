@@ -1,6 +1,5 @@
+<script lang="ts" setup></script>
+
 <template>
-  <div>
-    <NuxtLink to="/api/login" external> Sign in </NuxtLink>
-    <NuxtLink to="/api/register" external> Sign up </NuxtLink>
-  </div>
+  <div>Index page</div>
 </template>
