@@ -96,7 +96,7 @@ async function preventExceedMaxOrgs(
 }
 
 async function preventExceedDBOrgs(event: H3Event, userPlan: UserPlan) {
-  const dbOrgs = await event.$fetch("/api/user/organizations");
+  const dbOrgs = await event.$fetch("/api/organizations");
   if (dbOrgs.length > 4 && userPlan === "FREE")
     throw createError({
       statusCode: 400,

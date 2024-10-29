@@ -22,10 +22,10 @@
 
   onMounted(async () => {
     if (isFirstTimeUser.value || isCookieNotBoolean.value)
-      await $fetch("/api/users/verify-first-time-user");
+      await $fetch("/api/user/verify-first-time-user");
   });
 
-  const { data } = useFetch("/api/user/organizations", {
+  const { data } = useFetch("/api/organizations", {
     key: "orgs",
   });
 

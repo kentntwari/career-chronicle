@@ -25,7 +25,7 @@
 
     emit("formSubmitted");
 
-    $fetch("/api/user/organization", {
+    $fetch("/api/organization", {
       method: "POST",
       body: newOrg,
       onRequest() {
