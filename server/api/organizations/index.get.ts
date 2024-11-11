@@ -1,8 +1,5 @@
 import type { Orgs } from "~/types";
 
-import { H3Error } from "h3";
-
-import { loadUserOrgs } from "~/server/utils/db";
 import * as authorize from "~/server/utils/authorize";
 import * as store from "@/utils/store";
 import { redis } from "@/lib/redis";
@@ -15,6 +12,7 @@ export default defineEventHandler(async (event) => {
 
     const storage = useStorage("data");
     const user = await kinde.getUser();
+
     const isFirstTimeUser = await storage.getItem(
       store.resolveUser(user.email)
     );
@@ -41,21 +39,13 @@ export default defineEventHandler(async (event) => {
 
           for (const org of userOrgs)
             await redis.rpush(store.resolveUserOrgs(user.email), org);
+
+          return userOrgs;
       }
     }
 
     return [];
   } catch (error) {
-    if (error instanceof H3Error) {
-      throw createError({
-        statusCode: error.statusCode,
-        statusMessage: error.statusMessage,
-      });
-    }
-
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Internal Server Error",
-    });
+    throwError(error);
   }
 });
