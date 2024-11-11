@@ -13,3 +13,19 @@
     --info-text: 217deg 16% 29%;
   }
 }
+
+@layer utilities {
+  .banner {
+    @apply w-full bg-info-bg/15 px-3 py-[10px] space-y-4 rounded-lg;
+  }
+  .banner-title {
+    @apply font-normal text-sm text-info-text text-pretty;
+  }
+  .banner-footer {
+    @apply block font-medium text-sm text-neutral-grey-1300 text-balance;
+  }
+
+  .dialog-content {
+    @apply fixed z-10 bottom-0 left-0 right-0 h-[340px] bg-[#fff] p-4 space-y-6;
+  }
+}
