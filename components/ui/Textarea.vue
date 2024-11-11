@@ -1,12 +1,12 @@
 <script setup lang="ts">
   import type { HTMLAttributes } from "vue";
-  import { cn } from "~/lib/cn";
+  import { cn } from "@/lib/cn";
   import { useVModel } from "@vueuse/core";
 
   const props = defineProps<{
+    class?: HTMLAttributes["class"];
     defaultValue?: string | number;
     modelValue?: string | number;
-    class?: HTMLAttributes["class"];
   }>();
 
   const emits = defineEmits<{
@@ -20,12 +20,11 @@
 </script>
 
 <template>
-  <input
+  <textarea
     v-model="modelValue"
-    v-bind="$attrs"
     :class="
       cn(
-        'flex h-10 w-full rounded-md border border-neutral-grey-700 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 outline-none',
+        'flex min-h-20 w-full rounded-md border border-neutral-grey-700 px-3 py-2 text-sm outline-none',
         props.class
       )
     "
