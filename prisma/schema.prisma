@@ -21,7 +21,7 @@ model User {
   organizations Organization[]
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
-  plan          Plan?          @relation(fields: [planId], references: [id])
+  plan          Plan?          @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   planId        String?        @map("plan_id")
 
   @@index([id, email], name: "user_idx")
@@ -30,7 +30,7 @@ model User {
 
 model Plan {
   id               String @id @default(cuid())
-  tier             Tier   @default(FREE)
+  tier             Tier   @unique @default(FREE)
   maxOrganizations Int    @default(5) @map("max_organizations")
   maxPositions     Int    @default(10) @map("max_positions")
   maxAchievements  Int    @default(20) @map("max_achievements")
@@ -39,21 +39,33 @@ model Plan {
   maxFailures      Int    @default(20) @map("max_failures")
   users            User[]
 
-  @@index([id], name: "plan_idx")
+  @@index([tier], name: "plan_idx")
 }
 
 model Organization {
-  id        String     @id @default(cuid())
-  name      String     @db.VarChar(250)
-  slug      String     @unique
-  positions Position[]
-  user      User?      @relation(fields: [userId], references: [id])
-  userId    String?    @map("user_id")
-  createdAt DateTime   @default(now()) @map("created_at")
-  updatedAt DateTime   @updatedAt @map("updated_at")
+  id                   String              @id @default(cuid())
+  name                 String              @db.VarChar(250)
+  slug                 String              @unique
+  positions            Position[]
+  user                 User?               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId               String?             @map("user_id")
+  createdAt            DateTime            @default(now()) @map("created_at")
+  updatedAt            DateTime            @updatedAt @map("updated_at")
+  states               OrganizationStates? @relation(fields: [organizationStatesId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationStatesId String?             @unique
 
   @@index([id, slug], name: "organization_idx")
   @@map("organization")
+}
+
+model OrganizationStates {
+  id                      String        @id @default(cuid())
+  firstPositionCreated    Boolean       @default(false) @map("first_position_created")
+  firstAchievementCreated Boolean       @default(false) @map("first_achievement_created")
+  firstFailureCreated     Boolean       @default(false) @map("first_failure_created")
+  firstChallengeCreated   Boolean       @default(false) @map("first_challenge_created")
+  firstProjectCreated     Boolean       @default(false) @map("first_project_created")
+  organization            Organization?
 }
 
 model Position {
@@ -65,7 +77,7 @@ model Position {
   failures       Failure[]
   challenges     Challenge[]
   projects       Project[]
-  organization   Organization? @relation(fields: [organizationId], references: [id])
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   organizationId String?       @map("organization_id")
   monthStartedAt Month         @default(JANUARY) @map("month_started_at")
   yearStartedAt  Int           @default(1950) @map("year_started_at")
@@ -82,7 +94,7 @@ model Achievement {
   slug        String  @unique
   description String? @db.VarChar(1000)
 
-  position       Position? @relation(fields: [positionId], references: [id])
+  position       Position? @relation(fields: [positionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   positionId     String?   @map("position_id")
   monthOccuredAt Month?    @map("month_occured_at")
   yearOccuredAt  Int?      @map("year_occured_at")
@@ -98,7 +110,7 @@ model Failure {
   title          String    @db.VarChar(250)
   slug           String    @unique
   description    String?   @db.VarChar(1000)
-  position       Position? @relation(fields: [positionId], references: [id])
+  position       Position? @relation(fields: [positionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   positionId     String?   @map("position_id")
   monthOccuredAt Month?    @map("month_occured_at")
   yearOccuredAt  Int?      @map("year_occured_at")
@@ -117,7 +129,7 @@ model Challenge {
   isAchievement  Boolean   @default(false) @map("is_achievement")
   isFailure      Boolean   @default(false) @map("is_failure")
   isProject      Boolean   @default(false) @map("is_project")
-  position       Position? @relation(fields: [positionId], references: [id])
+  position       Position? @relation(fields: [positionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   positionId     String?   @map("position_id")
   monthOccuredAt Month?    @map("month_occured_at")
   yearOccuredAt  Int?      @map("year_occured_at")
@@ -137,7 +149,7 @@ model Project {
   description   String?   @db.VarChar(1000)
   isAchievement Boolean   @default(false) @map("is_achievement")
   isFailure     Boolean   @default(false) @map("is_failure")
-  position      Position? @relation(fields: [positionId], references: [id])
+  position      Position? @relation(fields: [positionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   positionId    String?   @map("position_id")
   startedAt     DateTime? @map("started_at")
   finishedAt    DateTime? @map("finished_at")
