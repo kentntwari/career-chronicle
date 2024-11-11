@@ -20,17 +20,9 @@
     return false;
   });
 
-  onMounted(async () => {
+  onBeforeMount(async () => {
     if (isFirstTimeUser.value || isCookieNotBoolean.value)
-      await $fetch("/api/user/verify-first-time-user");
-  });
-
-  const { data } = useFetch("/api/organizations", {
-    key: "orgs",
-  });
-
-  const createdOrgs = computed(() => {
-    return !data.value ? 0 : data.value.length;
+      await $fetch("/api/user/first-time");
   });
 </script>
 
@@ -46,12 +38,12 @@
     <div
       v-show="!isCookieNotBoolean"
       :class="[
-        isFirstTimeUser ? 'max-w-[366px] space-y-10' : '',
-        !isFirstTimeUser ? 'w-full space-y-14' : '',
+        isFirstTimeUser ? 'max-w-[366px]' : '',
+        !isFirstTimeUser ? 'w-full' : '',
       ]"
       data-allow-mismatch
     >
-      <template v-if="isFirstTimeUser">
+      <section class="space-y-10" v-if="isFirstTimeUser">
         <p class="font-medium text-balance">
           Hi {{ $auth.user?.given_name }},
           <br />
@@ -65,11 +57,19 @@
           <br />
           Let's get you up to speed.
         </p>
-        <app-dialog-create-organization>
-          <template #trigger>
-            <ui-button type="button">Get Started</ui-button>
+        <ui-dialog>
+          <template #trigger="{ open: createOrganization }">
+            <ui-button type="button" @click="createOrganization()"
+              >Get Started</ui-button
+            >
           </template>
           <template v-slot="{ close }" #default>
+            <visually-hidden>
+              <dialog-title></dialog-title>
+            </visually-hidden>
+            <visually-hidden
+              ><dialog-description></dialog-description
+            ></visually-hidden>
             <app-form-organization
               @cancel="close()"
               @form-submitted="
@@ -80,74 +80,12 @@
               "
             />
           </template>
-        </app-dialog-create-organization>
-      </template>
+        </ui-dialog>
+      </section>
 
-      <template v-else>
-        <header
-          class="w-full bg-info-bg/15 px-3 py-[10px] space-y-4 rounded-lg"
-          role="organizations-limits-banner"
-          aria-label="organizations-limits"
-        >
-          <p class="font-regular text-sm text-info-text text-balance">
-            Record up to 5 organizations for free. Upgrades coming soon
-          </p>
-          <small
-            class="block font-medium text-sm text-neutral-grey-1300 text-balance"
-            >{{ createdOrgs }}/5 created</small
-          >
-        </header>
-        <section class="space-y-6">
-          <div class="h-9 border-b border-neutral-grey-600">
-            <h1 class="capitalize font-bold text-md">
-              Organizations ({{ createdOrgs }})
-            </h1>
-          </div>
-          <div class="space-y-8">
-            <span v-if="!data">No organizations found</span>
-            <span v-else-if="data.length < 0"
-              >No organizations created yet</span
-            >
-            <div class="flex flex-col gap-4" v-else>
-              <nuxt-link
-                v-for="org in data"
-                :to="org.slug"
-                class="inline-flex items-center gap-x-2"
-              >
-                <lucide-flag :size="18" class="fill-body"></lucide-flag>
-                <span class="font-medium capitalize">{{ org.name }}</span>
-              </nuxt-link>
-            </div>
-
-            <app-dialog-create-organization>
-              <template #trigger>
-                <ui-button type="button" variant="link" size="link"
-                  >Add organization</ui-button
-                >
-              </template>
-              <template v-slot="{ close }" #default>
-                <app-form-organization
-                  @cancel="close()"
-                  @form-submitted="close()"
-                />
-              </template>
-            </app-dialog-create-organization>
-          </div>
-        </section>
-      </template>
+      <lazy-app-data-organizations as="section" v-else />
     </div>
 
-    <div class="max-w-[360px] space-y-10" v-show="isCookieNotBoolean">
-      <div class="w-40 h-6 bg-neutral-grey-600 animate-pulse rounded-lg"></div>
-      <div
-        class="w-full h-6 bg-neutral-grey-600 animate-pulse rounded-lg"
-      ></div>
-      <div
-        class="w-full h-6 bg-neutral-grey-600 animate-pulse rounded-lg"
-      ></div>
-      <div
-        class="w-full h-6 bg-neutral-grey-600 animate-pulse rounded-lg"
-      ></div>
-    </div>
+    <app-skeleton-organizations v-show="isCookieNotBoolean" />
   </main>
 </template>
