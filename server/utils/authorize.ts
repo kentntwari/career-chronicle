@@ -1,3 +1,5 @@
+import { H3Event } from "h3";
+
 export type Permissions = [
   "read:orgs",
   "update:orgs",
