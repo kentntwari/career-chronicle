@@ -1,15 +1,11 @@
-import { Prisma } from "@prisma/client";
+import { Month, Prisma, Tier } from "@prisma/client";
 
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import * as zs from "~/utils/zschemas";
 
-const userCredentialsSchema = z.object({
-  id: z.string(),
-  email: z.string().email(),
-});
-
-type UserCredentials = z.infer<typeof userCredentialsSchema>;
+type UserCredentials = z.infer<typeof zs.userCredentialsSchema>;
 
 async function findExistingUser(user: UserCredentials) {
   return prisma.user.findUnique({
@@ -22,6 +18,22 @@ async function findExistingUser(user: UserCredentials) {
       email: true,
       plan: true,
     },
+  });
+}
+
+function loadFreeUserOrgs(user: UserCredentials) {
+  return prisma.organization.findMany({
+    where: {
+      userId: user.id,
+    },
+    select: {
+      name: true,
+      slug: true,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    take: 5,
   });
 }
 
@@ -53,20 +65,75 @@ export async function findUserPlan(user: UserCredentials) {
   }
 }
 
-function loadFreeUserOrgs(user: UserCredentials) {
-  return prisma.organization.findMany({
-    where: {
-      userId: user.id,
-    },
-    select: {
-      name: true,
-      slug: true,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    take: 5,
-  });
+export async function createFreePlan(
+  user: UserCredentials & { firstName: string; lastName: string }
+) {
+  try {
+    const currentFreePlan = await prisma.plan.findFirst({
+      where: {
+        tier: "FREE",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!currentFreePlan) throw new Error("No free plan found");
+
+    const currentUser = await findExistingUser(user);
+
+    if (!currentUser)
+      return await prisma.plan.update({
+        where: {
+          id: currentFreePlan.id,
+        },
+        data: {
+          users: {
+            create: {
+              id: user.id,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+            },
+          },
+        },
+      });
+
+    return await prisma.plan.update({
+      where: {
+        id: currentFreePlan.id,
+      },
+      data: {
+        users: {
+          connect: {
+            id: currentUser.id,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function loadPlanLimits(plan: Tier) {
+  try {
+    return await prisma.plan.findFirst({
+      where: {
+        tier: plan,
+      },
+      select: {
+        maxOrganizations: true,
+        maxPositions: true,
+        maxAchievements: true,
+        maxChallenges: true,
+        maxFailures: true,
+        maxProjects: true,
+      },
+    });
+  } catch (error) {
+    logAndThrow(error);
+  }
 }
 
 export async function loadUserOrgs(user: UserCredentials) {
@@ -82,9 +149,40 @@ export async function loadUserOrgs(user: UserCredentials) {
         return await loadFreeUserOrgs(user);
 
       default:
-        // TODO: remember to implement catered results for PRO users
+        // FIX: Implement catered results for PRO users
         return await loadFreeUserOrgs(user);
     }
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function loadOrg(orgSlug: string) {
+  try {
+    const loadedOrg = await prisma.organization.findFirst({
+      where: {
+        slug: orgSlug.toLocaleLowerCase(),
+      },
+      select: {
+        name: true,
+        slug: true,
+        states: true,
+      },
+    });
+
+    if (!loadedOrg) return null;
+
+    return {
+      name: loadedOrg.name,
+      slug: loadedOrg.slug,
+      hasCreatedPositionBefore: loadedOrg.states?.firstPositionCreated || false,
+      hasCreatedAchievementBefore:
+        loadedOrg.states?.firstAchievementCreated || false,
+      hasCreatedFailureBefore: loadedOrg.states?.firstFailureCreated || false,
+      hasCreatedChallengeBefore:
+        loadedOrg.states?.firstChallengeCreated || false,
+      hasCreatedProjectBefore: loadedOrg.states?.firstProjectCreated || false,
+    };
   } catch (error) {
     logAndThrow(error);
   }
@@ -103,12 +201,21 @@ export async function createNewOrg(
         data: {
           name: orgName.toLocaleLowerCase(),
           slug: orgSlug.toLocaleLowerCase(),
+          states: {
+            create: {},
+          },
           user: {
             create: {
               id: user.id,
               firstName: user.firstName,
               lastName: user.lastName,
               email: user.email,
+              plan: {
+                connectOrCreate: {
+                  where: { tier: "FREE" },
+                  create: { tier: "FREE" },
+                },
+              },
             },
           },
         },
@@ -121,9 +228,94 @@ export async function createNewOrg(
       data: {
         name: orgName.toLocaleLowerCase(),
         slug: orgSlug.toLocaleLowerCase(),
+        states: {
+          create: {},
+        },
+        user: {
+          connect: {
+            id: currentUser.id,
+          },
+        },
       },
     });
     return;
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function createOrgPosition(
+  orgSlug: string,
+  newPosition: z.infer<typeof zs.incomingNewPositionBody>
+) {
+  try {
+    const parentOrg = await prisma.organization.findUnique({
+      where: {
+        slug: orgSlug.toLocaleLowerCase(),
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!parentOrg) throw new Error("Organization not found");
+
+    await prisma.position.create({
+      data: {
+        title: newPosition.title,
+        slug: newPosition.slug,
+        description: newPosition.description ?? "",
+        monthStartedAt: newPosition.tenure.month as Month,
+        organization: {
+          connect: {
+            id: parentOrg.id,
+          },
+        },
+      },
+    });
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function loadOrgPositions(
+  orgSlug: string,
+  { month, year }: { month?: Month; year?: number | string } = {}
+) {
+  try {
+    return await prisma.organization.findUnique({
+      where: {
+        slug: orgSlug.toLocaleLowerCase(),
+      },
+      select: {
+        positions: {
+          select: { title: true, slug: true },
+        },
+      },
+    });
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function loadOrgStates(orgSlug: string) {
+  try {
+    return await prisma.organization.findUnique({
+      where: {
+        slug: orgSlug.toLocaleLowerCase(),
+      },
+      select: {
+        states: {
+          select: {
+            firstPositionCreated: true,
+            firstAchievementCreated: true,
+            firstChallengeCreated: true,
+            firstFailureCreated: true,
+            firstProjectCreated: true,
+          },
+        },
+      },
+    });
   } catch (error) {
     logAndThrow(error);
   }
