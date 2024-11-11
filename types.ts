@@ -1,4 +1,9 @@
-import type { Prisma } from "@prisma/client";
+import type {
+  Prisma,
+  Organization,
+  Position,
+  OrganizationStates,
+} from "@prisma/client";
 import type {
   ACClient,
   SessionManager,
@@ -23,6 +28,8 @@ export type KindeContext = {
   ) => ReturnType<ACClient[key]>;
 } & { sessionManager: SessionManager };
 
-export type Orgs = z.infer<typeof zschemas.cachedOrgs>;
-export type ApiFetchedOrgs = z.infer<typeof zschemas.apiFetchedOrgs>;
-export type UserPlan = z.infer<typeof zschemas.userPlan>;
+export type Orgs = Pick<Organization, "name" | "slug">[];
+export type SingleOrg = NonNullable<Awaited<ReturnType<typeof loadOrg>>>;
+export type ApiFetchedOrgs = Orgs[number] | null | undefined;
+export type OrgPos = Pick<Position, "title" | "slug">[];
+export type OrgStates = Omit<OrganizationStates, "id">;
