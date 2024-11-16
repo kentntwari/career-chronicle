@@ -15,7 +15,7 @@ export async function validateSubmission(
 export async function validateSubmission(
   event: H3Event,
   target: typeof POSITION
-): Promise<z.infer<typeof zschemas.incomingNewOrgBody>>;
+): Promise<z.infer<typeof zschemas.incomingNewPositionBody>>;
 
 export async function validateSubmission<T extends Target>(
   event: H3Event,
@@ -48,6 +48,7 @@ export async function validateSubmission<T extends Target>(
     throw createError({
       statusCode: 400,
       statusMessage: "Wrong submission",
+      message: submitted.error.message,
     });
 
   return submitted.data;
