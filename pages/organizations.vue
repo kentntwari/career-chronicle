@@ -59,9 +59,9 @@
         </p>
         <ui-dialog>
           <template #trigger="{ open: createOrganization }">
-            <ui-button type="button" @click="createOrganization()"
-              >Get Started</ui-button
-            >
+            <app-create-organization-btn @create="createOrganization()">
+              Get Started
+            </app-create-organization-btn>
           </template>
           <template v-slot="{ close }" #default>
             <visually-hidden>
