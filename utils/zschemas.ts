@@ -26,8 +26,24 @@ export const newPosition = z.object({
   tenure: z.object({
     month: z
       .string({ required_error: "Must select a month" })
+      .transform((val) => val.toLocaleUpperCase())
       .superRefine((val, ctx) => {
-        if (!memoizedMonthArray().includes(val))
+        const MONTHS = [
+          "January",
+          "February",
+          "March",
+          "April",
+          "May",
+          "June",
+          "July",
+          "August",
+          "September",
+          "October",
+          "November",
+          "December",
+        ];
+
+        if (!MONTHS.map((m) => m.toUpperCase()).includes(val))
           ctx.addIssue({
             code: "custom",
             message: "Must be a valid month",

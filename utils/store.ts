@@ -36,6 +36,10 @@ export function resolveOrgStates(userEmail: string, orgSlug: string) {
   return `user:${userEmail}:org:${orgSlug}:states`;
 }
 
-export function resolvePos(userEmail: UserEmail, orgSlug: string, pos: string) {
-  return `user:${userEmail}:org:${orgSlug}:pos:${pos}`;
+export function resolvePos(
+  userEmail: UserEmail,
+  orgSlug: string,
+  positionSlug: string
+) {
+  return `user:${userEmail}:org:${orgSlug}:pos:${positionSlug}`;
 }
