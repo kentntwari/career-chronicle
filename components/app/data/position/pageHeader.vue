@@ -36,7 +36,7 @@
       if (val) orgPositions.value = val;
       else {
         orgPositions.value = await useRequestFetch()<OrgPos>(
-          "/api/organization" + c.value + "/positions"
+          "/api/organization/" + c.value + "/positions"
         );
         nuxtApp.payload.data[key.value] = orgPositions.value;
       }

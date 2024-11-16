@@ -84,6 +84,7 @@
           <app-data-position-snippet
             v-for="position in data"
             :data="position"
+            :parent-organization="parentOrganization"
           />
         </div>
 

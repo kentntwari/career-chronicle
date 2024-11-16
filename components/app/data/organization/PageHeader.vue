@@ -20,7 +20,7 @@
   const c = useCurrentRouteOrg();
 
   const { data: cachedOrgs } = useNuxtData<Orgs>("orgs");
-  const userOrgs = useState<Orgs>("org:" + c.value, () => []);
+  const userOrgs = useState<Orgs>("orgs", () => []);
 
   const nuxtApp = useNuxtApp();
 

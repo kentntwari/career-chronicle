@@ -8,14 +8,10 @@
 
 <template>
   <NuxtLayout name="parent-organization">
-    <template #default="{ organization }: { organization: SingleOrg }">
-      <div v-if="!organization.hasCreatedPositionBefore">
-        There appears to be no result for this position
-        <app-create-position-btn />
-      </div>
+    <template #default="{ organization }: { organization: SingleOrg | null }">
       <NuxtLayout
         name="parent-position"
-        :parent-organization="organization.slug"
+        :parent-organization="organization?.slug ?? ''"
       >
         WDEW
       </NuxtLayout>

@@ -6,13 +6,14 @@
       title: string;
       slug: string;
     };
+    parentOrganization: string;
   }
 
   const props = defineProps<Props>();
 
-  const parentOrganization = useRoute().params.orgSlug;
   const positionUrl = computed(
-    () => `/organization/${parentOrganization}/position/${props.data.slug}`
+    () =>
+      `/organization/${props.parentOrganization}/position/${props.data.slug}`
   );
 
   async function openNewTab(url: string) {
