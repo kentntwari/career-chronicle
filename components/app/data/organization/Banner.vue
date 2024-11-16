@@ -2,7 +2,7 @@
   import type { Plan } from "@prisma/client";
 
   defineProps<{
-    positions: string | number;
+    orgs: string | number;
   }>();
 
   const plan = useState<Plan>("user-plan");
@@ -12,14 +12,17 @@
   <header
     class="banner"
     role="banner"
-    aria-label="start of available positions limits"
+    aria-label="start of available organizations limits"
   >
     <p class="banner-title">
-      Record up to {{ plan.maxPositions }} journeys
+      Record up to {{ plan.maxOrganizations }} organizations
       {{ plan.tier === "FREE" ? "for free" : "" }}. Upgrades coming soon
     </p>
-    <small class="banner-footer" aria-label="end of available position limits">
-      {{ positions }}/{{ plan.maxPositions }} positions created
+    <small
+      class="banner-footer"
+      aria-label="end of available organization limits"
+    >
+      {{ orgs }}/{{ plan.maxOrganizations }} organizations created
     </small>
   </header>
 </template>

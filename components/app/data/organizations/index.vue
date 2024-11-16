@@ -1,26 +1,28 @@
 <script lang="ts" setup>
-  import type { Plan } from "@prisma/client";
+  import type { Orgs } from "~/types";
   import { cn } from "~/lib/cn";
 
   interface Props {
     as: string;
-    showBanner?: boolean;
   }
 
   withDefaults(defineProps<Props>(), {
     as: "div",
-    showBanner: true,
   });
 
-  const { data, status } = await useLazyFetch("/api/organizations", {
+  const { data, status } = await useLazyFetch<Orgs>("/api/organizations", {
     key: "orgs",
+    getCachedData: (_key, nuxtApp) => {
+      if (!nuxtApp.payload.data.orgs) return;
+      return nuxtApp.payload.data.orgs;
+    },
   });
+
+  const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 300 });
 
   const createdOrgs = computed(() => {
     return !data.value ? 0 : data.value.length;
   });
-
-  const plan = useState<Plan>("user-plan");
 </script>
 
 <template>
@@ -34,7 +36,7 @@
           Organizations ({{ createdOrgs }})
         </h1>
       </div>
-      <lazy-app-skeleton-organizations v-if="status === 'pending'" />
+      <lazy-app-skeleton-organizations v-if="isLoading === 'pending'" />
       <div class="space-y-8" v-else>
         <p v-if="!data">No organizations found</p>
         <p v-else-if="data.length === 0">No organizations created yet</p>
@@ -44,24 +46,14 @@
 
         <ui-dialog>
           <template #trigger="{ open: createOrganization }">
-            <ui-toast
-              type="error"
-              title="You have reached the maximum organizations allowed under your plan"
-              v-slot="{ triggerToast }"
+            <app-create-organization-btn
+              :data="data ?? []"
+              :variant="'link'"
+              :size="'link'"
+              @create="createOrganization()"
             >
-              <ui-button
-                type="button"
-                variant="link"
-                size="link"
-                @click="
-                  () => {
-                    if (plan.maxOrganizations === data?.length) triggerToast();
-                    else createOrganization();
-                  }
-                "
-                >Add organization</ui-button
-              >
-            </ui-toast>
+              Add organization
+            </app-create-organization-btn>
           </template>
           <template v-slot="{ close }" #default>
             <visually-hidden>

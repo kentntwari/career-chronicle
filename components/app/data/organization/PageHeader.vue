@@ -6,27 +6,32 @@
     Flag as LucideFlagIcon,
     ChevronRight as LucideChevronRightIcon,
     ChevronDown as LucideChevronDownIcon,
-    Turtle,
   } from "lucide-vue-next";
 
   const props = defineProps<{
-    orgTitle: string;
+    organization: string;
   }>();
 
   const emit = defineEmits<{
     selected: [org: Orgs[number]["slug"]];
   }>();
+  const defaultSelection = computed(() => props.organization);
 
-  const defaultSelection = ref(props.orgTitle);
+  const c = useCurrentRouteOrg();
 
-  const { data: savedData } = useNuxtData<Orgs>("orgs");
-  const userOrgs = useState<Orgs>("user-orgs", () => []);
+  const { data: cachedOrgs } = useNuxtData<Orgs>("orgs");
+  const userOrgs = useState<Orgs>("org:" + c.value, () => []);
+
+  const nuxtApp = useNuxtApp();
 
   watch(
-    () => savedData.value,
+    () => cachedOrgs.value,
     async (val) => {
       if (val) userOrgs.value = val;
-      else userOrgs.value = await useRequestFetch()<Orgs>("/api/organizations");
+      else {
+        userOrgs.value = await useRequestFetch()<Orgs>("/api/organizations");
+        nuxtApp.payload.data.orgs = userOrgs.value;
+      }
     },
     {
       immediate: true,
@@ -37,6 +42,7 @@
   function handleChange(value: Orgs[number]["name"]) {
     const selected = userOrgs.value.find((org) => org.name === value);
     if (!selected) return;
+    c.value = selected.slug;
     history.pushState({}, "", `/organization/${selected.slug}`);
     emit("selected", selected.slug);
   }

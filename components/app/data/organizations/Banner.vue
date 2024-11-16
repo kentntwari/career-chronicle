@@ -20,7 +20,11 @@
       Record up to {{ plan.maxOrganizations }}
       {{ plan.tier === "FREE" ? "for free" : "" }}. Upgrades coming soon
     </p>
-    <small role="region" aria-label="end of available organizations limits">
+    <small
+      class="banner-footer"
+      role="region"
+      aria-label="end of available organizations limits"
+    >
       {{ orgs }}/{{ plan.maxOrganizations }} created
     </small>
   </header>

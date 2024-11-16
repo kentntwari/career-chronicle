@@ -16,9 +16,20 @@
   const [month, monthAttrs] = defineField("tenure.month");
   const [year, yearAttrs] = defineField("tenure.year");
   const [desc, descAttrs] = defineField("description");
+  const currentOrg = useRoute().params.orgSlug;
 
   const onSubmit = handleSubmit((values) => {
-    alert(JSON.stringify(values));
+    const newPosition = {
+      ...values,
+      slug: generateSlug(values.title.toLowerCase()),
+    };
+
+    emit("formSubmitted");
+
+    $fetch("/api/organization/" + currentOrg + "/position", {
+      method: "POST",
+      body: newPosition,
+    });
   });
 </script>
 
