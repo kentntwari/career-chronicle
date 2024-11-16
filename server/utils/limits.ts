@@ -13,7 +13,7 @@ const POSITION = "position" as const;
 
 interface NarrowedTargets {
   targetOrganization: Orgs[number]["slug"] | null;
-  targetPosition: Position["slug"] | null;
+  // targetPosition: Position["slug"] | null;
 }
 
 export async function enforcePlanLimits<
@@ -23,7 +23,7 @@ export async function enforcePlanLimits<
   event: H3Event,
   user: UserType,
   target: T,
-  { targetOrganization = null, targetPosition = null } = {} as K
+  { targetOrganization = null } = {} as K
 ) {
   let cachedOrgs: Orgs[number][];
   let cachedPositions: Position[];
@@ -50,7 +50,7 @@ export async function enforcePlanLimits<
         message: "Organization not provided",
       });
 
-    case target === "position" && !!targetOrganization && !!targetPosition:
+    case target === "position" && !!targetOrganization:
       cachedPositions = await retrieveCachedPositions(user, targetOrganization);
       await capPositions(event, userPlan.tier, cachedPositions);
       break;
@@ -116,7 +116,7 @@ async function capPositions(
       });
 
     default:
-      const parentOrganization = getRouterParam(event, "organization");
+      const parentOrganization = getRouterParam(event, "orgSlug");
 
       if (!parentOrganization)
         throw createError({
@@ -126,7 +126,7 @@ async function capPositions(
         });
 
       const dbPositions = await event.$fetch<OrgPos>(
-        "/api/" + parentOrganization + "/positions"
+        "/api/organization/" + parentOrganization + "/positions"
       );
 
       if (dbPositions.length > 10 && userPlan === "FREE")
