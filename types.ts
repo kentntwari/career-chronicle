@@ -1,5 +1,4 @@
 import type {
-  Prisma,
   Organization,
   Position,
   OrganizationStates,
@@ -10,9 +9,8 @@ import type {
   UserType,
 } from "@kinde-oss/kinde-typescript-sdk";
 
-import { z } from "zod";
-
-import * as zschemas from "@/utils/zschemas";
+import * as b from "~/utils/button";
+import type { loadPosition } from "./server/utils/db";
 
 export type AuthState =
   | { loggedIn: true; user: UserType }
@@ -30,6 +28,16 @@ export type KindeContext = {
 
 export type Orgs = Pick<Organization, "name" | "slug">[];
 export type SingleOrg = NonNullable<Awaited<ReturnType<typeof loadOrg>>>;
+export type SinglePos = NonNullable<Awaited<ReturnType<typeof loadPosition>>>;
 export type ApiFetchedOrgs = Orgs[number] | null | undefined;
 export type OrgPos = Pick<Position, "title" | "slug">[];
 export type OrgStates = Omit<OrganizationStates, "id">;
+export type CachedPosition = Omit<
+  Position,
+  "id" | "createdAt" | "updatedAt" | "organizationId"
+>;
+
+export interface ButtonVariants {
+  variant?: NonNullable<Parameters<typeof b.variants>[0]>["variant"];
+  size?: NonNullable<Parameters<typeof b.variants>[0]>["size"];
+}
