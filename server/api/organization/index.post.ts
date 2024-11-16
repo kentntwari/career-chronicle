@@ -16,8 +16,6 @@ export default defineEventHandler(async (event) => {
       "update:orgs"
     );
 
-    const submitted = await validateSubmission(event, "organization");
-
     const user = await kinde.getUser();
     const storage = useStorage(store.DATA_STORE);
     const isFirstTimeUser = await storage.getItem<boolean>(
@@ -28,6 +26,8 @@ export default defineEventHandler(async (event) => {
 
     // FIX: cached organizations and database must match.
     await enforcePlanLimits(event, user, "organization");
+
+    const submitted = await validateSubmission(event, "organization");
 
     await Promise.all([
       // TODO: extend unstorage with redis to unify cache method

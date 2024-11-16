@@ -6,13 +6,14 @@ import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
 import { resolveOrg } from "~/utils/store";
 import { loadOrg } from "~/server/utils/db";
+import { validateParams } from "~/server/utils/params";
 
 export default defineEventHandler(async (event) => {
   const { kinde } = await allowAuthorizedKindeUser(event);
   const { permissions } = await kinde.getPermissions();
   authorize.hasPermissions(permissions as authorize.Permissions, "read:orgs");
 
-  const organization = validateOrganization(event);
+  const organization = validateParams(event, "organization");
 
   const user = await kinde.getUser();
 
@@ -37,16 +38,3 @@ export default defineEventHandler(async (event) => {
 
   return dbOrg;
 });
-
-export function validateOrganization(event: H3Event) {
-  const organization = getRouterParam(event, "orgSlug");
-
-  if (!organization)
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Bad request",
-      message: "Organization not provided",
-    });
-
-  return organization;
-}

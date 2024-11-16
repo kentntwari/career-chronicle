@@ -1,11 +1,12 @@
+import type { H3Event } from "h3";
 import type { UserType } from "@kinde-oss/kinde-typescript-sdk";
 import type { OrgPos } from "~/types";
 
 import * as authorize from "@/server/utils/authorize";
 import * as store from "~/utils/store";
 import * as db from "~/server/utils/db";
+import { validateParams } from "~/server/utils/params";
 import redis from "~/lib/redis";
-import { validateOrganization } from "~/server/api/organization/[orgSlug]/index.get";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,7 +17,7 @@ export default defineEventHandler(async (event) => {
       "read:position"
     );
 
-    const organization = validateOrganization(event);
+    const organization = validateParams(event, "organization");
 
     const user = await kinde.getUser();
 
