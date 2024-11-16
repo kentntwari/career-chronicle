@@ -188,6 +188,60 @@ export async function loadOrg(orgSlug: string) {
   }
 }
 
+export async function loadPosition(parentOrg: string, currentPosition: string) {
+  try {
+    const parentOrganization = await prisma.organization.findFirst({
+      where: {
+        slug: parentOrg,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!parentOrganization) throw new Error("Organization not found");
+
+    const position = await prisma.position.findFirst({
+      where: {
+        slug: currentPosition,
+        organizationId: parentOrganization.id,
+      },
+      select: {
+        title: true,
+        slug: true,
+        achievements: {
+          select: {
+            title: true,
+            slug: true,
+          },
+        },
+        challenges: {
+          select: {
+            title: true,
+            slug: true,
+          },
+        },
+        failures: {
+          select: {
+            title: true,
+            slug: true,
+          },
+        },
+        projects: {
+          select: {
+            title: true,
+            slug: true,
+          },
+        },
+      },
+    });
+
+    return position;
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
 export async function createNewOrg(
   user: UserCredentials & { firstName: string; lastName: string },
   orgName: string,
@@ -255,11 +309,16 @@ export async function createOrgPosition(
       },
       select: {
         id: true,
+        states: {
+          select: {
+            firstPositionCreated: true,
+          },
+        },
       },
     });
 
     if (!parentOrg) throw new Error("Organization not found");
-
+    // TODO: convert this into a transaxtion
     await prisma.position.create({
       data: {
         title: newPosition.title,
@@ -273,6 +332,20 @@ export async function createOrgPosition(
         },
       },
     });
+
+    if (!!parentOrg.states?.firstPositionCreated === false)
+      await prisma.organization.update({
+        where: {
+          id: parentOrg.id,
+        },
+        data: {
+          states: {
+            update: {
+              firstPositionCreated: true,
+            },
+          },
+        },
+      });
   } catch (error) {
     logAndThrow(error);
   }
