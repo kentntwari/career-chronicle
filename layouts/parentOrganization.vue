@@ -1,37 +1,49 @@
 <script lang="ts" setup>
   import type { UseFetchOptions } from "#app";
+  import type { FetchResponse } from "ofetch";
   import type { SingleOrg } from "~/types";
 
-  const nuxtApp = useNuxtApp();
+  const emit = defineEmits<{
+    selected: [org: SingleOrg["slug"]];
+  }>();
 
-  const currentOrg = useCurrentRouteOrg();
-  const computedParams = toRef(() => `/${currentOrg.value}`);
+  const route = useRoute();
 
-  const trk = useOrganizationKey();
+  const { $isFetchPositions, $fetchPositions, $abortFetchPositions } =
+    useNuxtApp();
+
+  const k = useOrganizationKey();
   const OPTIONS_ORGANIZATION: UseFetchOptions<SingleOrg> = {
-    key: trk.value,
+    key: k.value,
     baseURL: "/api/organization",
-  } as const;
+    onRequest: () => {
+      if ($isFetchPositions.value) $abortFetchPositions();
+    },
+    onResponse: ({ response }: { response: FetchResponse<SingleOrg> }) => {
+      if (
+        response._data?.hasCreatedPositionBefore &&
+        useMatchOrganizationPath().value
+      )
+        $fetchPositions();
 
-  const { data: cachedOrganization } = useNuxtData<SingleOrg>(trk.value);
+      if (!useMatchOrganizationPath().value && $isFetchPositions.value)
+        $abortFetchPositions();
+    },
+    getCachedData(key, nuxtApp) {
+      if (!nuxtApp.payload.data[key]) return;
+      return nuxtApp.payload.data[key];
+    },
+  } as const;
 
   const {
     data: organization,
     status,
     error: errorFetchingOrganization,
-  } = await useLazyFetch<SingleOrg>(computedParams, {
+  } = await useLazyFetch<SingleOrg>(`/${route.params.orgSlug}`, {
     ...OPTIONS_ORGANIZATION,
   });
 
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
-
-  watchEffect(() => {
-    if (
-      isLoading.value !== "pending" &&
-      cachedOrganization.value?.hasCreatedPositionBefore
-    )
-      nuxtApp.$fetchPositions();
-  });
 </script>
 
 <template>
@@ -42,6 +54,7 @@
 
     <app-data-organization-pageHeader
       :organization="organization?.name ?? ''"
+      @selected="(o) => emit('selected', o)"
     />
 
     <div v-show="isLoading === 'pending'">
@@ -59,7 +72,8 @@
     </div>
 
     <div :class="[isLoading === 'pending' ? 'invisible' : 'visible']" v-else>
-      <slot :organization="organization" />
+      <small v-if="!organization">Could not find organization</small>
+      <slot :organization="organization" v-else />
     </div>
   </ClientOnly>
 </template>

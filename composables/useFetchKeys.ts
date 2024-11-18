@@ -1,31 +1,14 @@
-import { useCurrentRouteOrg } from "./useCurrentRouteOrg";
-
 export function useOrganizationKey() {
-  const currentOrg = useCurrentRouteOrg();
-  const { $auth } = useNuxtApp();
-  return toRef(() => "user:" + $auth.user?.email + ":org:" + currentOrg.value);
+  const route = useRoute();
+  return computed(() => "org:" + route.params.orgSlug);
 }
 
 export function useOrgPositionsKey() {
-  const currentOrg = useCurrentRouteOrg();
-  const { $auth } = useNuxtApp();
-  return toRef(
-    () =>
-      "user:" + $auth.user?.email + ":org:" + currentOrg.value + ":positions"
-  );
+  const route = useRoute();
+  return computed(() => "org:" + route.params.orgSlug + ":positions");
 }
 
 export function useCurrentPositionKey() {
-  const currentOrg = useCurrentRouteOrg();
-  const currentPosition = useCurrentRoutePosition();
-  const { $auth } = useNuxtApp();
-  return toRef(
-    () =>
-      "user:" +
-      $auth.user?.email +
-      ":org:" +
-      currentOrg.value +
-      ":pos:" +
-      currentPosition.value
-  );
+  const route = useRoute();
+  return computed(() => "pos:" + route.params.positionSlug);
 }

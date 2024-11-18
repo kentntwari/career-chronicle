@@ -3,7 +3,7 @@
 
   import {
     X as LucideExitIcon,
-    Flag as LucideFlagIcon,
+    MapPin as LucideMapPinIcon,
     ChevronRight as LucideChevronRightIcon,
     ChevronDown as LucideChevronDownIcon,
   } from "lucide-vue-next";
@@ -13,32 +13,34 @@
   }>();
 
   const emit = defineEmits<{
-    selected: [org: OrgPos[number]["slug"]];
+    selected: [pos: OrgPos[number]["slug"]];
   }>();
 
-  const defaultSelection = ref("");
+  const route = useRoute();
 
-  const c = useCurrentRouteOrg();
-  const p = useCurrentRoutePosition();
+  const defaultSelection = useState<string>("selected-position");
 
-  const key = useOrgPositionsKey();
-  const { data: cachedOrgPositions } = useNuxtData<OrgPos>(key.value);
+  const k = useOrgPositionsKey();
+
+  const { data: cachedOrgPositions } = useNuxtData<OrgPos>("positions");
   const orgPositions = useState<OrgPos>(
-    "org:" + c.value + "positions",
+    "org:" + k.value + "positions",
     () => []
   );
 
   const nuxtApp = useNuxtApp();
 
   watch(
-    () => cachedOrgPositions.value,
-    async (val) => {
-      if (val) orgPositions.value = val;
+    [() => cachedOrgPositions.value, () => props.position],
+    async ([cached, position]) => {
+      defaultSelection.value = position;
+
+      if (cached) orgPositions.value = cached;
       else {
         orgPositions.value = await useRequestFetch()<OrgPos>(
-          "/api/organization/" + c.value + "/positions"
+          "/api/organization/" + route.params.ogSlug + "/positions"
         );
-        nuxtApp.payload.data[key.value] = orgPositions.value;
+        nuxtApp.payload.data["positions"] = orgPositions.value;
       }
     },
     {
@@ -46,21 +48,11 @@
     }
   );
 
-  watchEffect(() => {
-    defaultSelection.value = props.position;
-  });
-
   // TODO:Eventually, create a composable to handle browser history change
   // TODO: ensure that no title is duplicatd
   function handleChange(value: OrgPos[number]["title"]) {
     const selected = orgPositions.value.find((pos) => pos.title === value);
     if (!selected) return;
-    p.value = selected.slug;
-    history.pushState(
-      {},
-      "",
-      `/organization/${c.value}/position/${selected.slug}`
-    );
     emit("selected", selected.slug);
   }
 </script>
@@ -75,7 +67,7 @@
         <figure
           class="w-8 h-8 bg-[#3E4756] flex justify-center items-center rounded-lg"
         >
-          <lucide-flag-icon :size="20" color="white" fill="white" />
+          <lucide-map-pin-icon :size="20" color="white" />
         </figure>
         <figure class="px-1">
           <lucide-chevron-right-icon

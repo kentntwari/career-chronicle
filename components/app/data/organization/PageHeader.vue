@@ -15,9 +15,7 @@
   const emit = defineEmits<{
     selected: [org: Orgs[number]["slug"]];
   }>();
-  const defaultSelection = computed(() => props.organization);
-
-  const c = useCurrentRouteOrg();
+  const defaultSelection = useState<string>("selected-org");
 
   const { data: cachedOrgs } = useNuxtData<Orgs>("orgs");
   const userOrgs = useState<Orgs>("orgs", () => []);
@@ -25,8 +23,10 @@
   const nuxtApp = useNuxtApp();
 
   watch(
-    () => cachedOrgs.value,
-    async (val) => {
+    [() => cachedOrgs.value, () => props.organization],
+    async ([val, org]) => {
+      defaultSelection.value = org;
+
       if (val) userOrgs.value = val;
       else {
         userOrgs.value = await useRequestFetch()<Orgs>("/api/organizations");
@@ -42,8 +42,6 @@
   function handleChange(value: Orgs[number]["name"]) {
     const selected = userOrgs.value.find((org) => org.name === value);
     if (!selected) return;
-    c.value = selected.slug;
-    history.pushState({}, "", `/organization/${selected.slug}`);
     emit("selected", selected.slug);
   }
 </script>

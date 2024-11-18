@@ -11,8 +11,11 @@
 
   const props = defineProps<Props>();
 
-  const orgKey = useOrganizationKey();
-  const nuxtData_organization = useNuxtData<SingleOrg>(orgKey.value);
+  const route = useRoute();
+  
+  const nuxtData_organization = useNuxtData<SingleOrg>(
+    "org:" + route.params.orgSlug
+  );
 
   const createdPositions = computed(() => {
     return !props.data ? 0 : props.data.length;

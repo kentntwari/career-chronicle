@@ -1,36 +1,40 @@
 <script lang="ts" setup>
   import type { UseFetchOptions } from "#app";
-  import type { FetchResponse } from "ofetch";
-  import { useDelayedLoading } from "~/composables/useDelayedLoading";
-  import { useCurrentPositionKey } from "~/composables/useFetchKeys";
   import type { SingleOrg, SinglePos } from "~/types";
 
   const props = defineProps<{
-    parentOrganization: SingleOrg["slug"];
+    parentOrganization?: SingleOrg["slug"];
     isFirstPosition?: boolean;
   }>();
 
-  const currentPosition = useCurrentRoutePosition();
-  const computedParams = computed(
-    () => `/${props.parentOrganization}/position/${currentPosition.value}`
-  );
-  const toRefKey = useCurrentPositionKey();
+  const emit = defineEmits<{
+    selected: [pos: SinglePos["slug"]];
+  }>();
+
+  const route = useRoute();
+
+  const k = useOrgPositionsKey();
+
   const OPTIONS_POSITION: UseFetchOptions<SinglePos> = {
-    key: toRefKey.value,
+    key: k.value,
     baseURL: "/api/organization",
     deep: false,
     immediate: !props.isFirstPosition ? true : false,
   } as const;
 
-  const { data: position } = await useLazyFetch<SinglePos>(computedParams, {
-    ...OPTIONS_POSITION,
-  });
+  const { data: position } = await useLazyFetch<SinglePos>(
+    `${props.parentOrganization ?? route.params.orgSlug}/position/${route.params.positionSlug}`,
+    {
+      ...OPTIONS_POSITION,
+    }
+  );
 </script>
 
 <template>
   <app-data-position-pageHeader
     :position="position?.title ?? ''"
     class="border border-neutral-grey-600"
+    @selected="(pos) => emit('selected', pos)"
   />
-  {{ JSON.stringify(position) }}
+  <slot />
 </template>

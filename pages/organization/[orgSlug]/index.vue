@@ -1,8 +1,5 @@
 <script lang="ts" setup>
-  import type { FetchResponse } from "ofetch";
   import type { SingleOrg, OrgPos } from "~/types";
-
-  import { useCurrentRouteOrg } from "~/composables/useCurrentRouteOrg";
 
   definePageMeta({
     middleware: ["protected"],
@@ -11,28 +8,23 @@
 
   const nuxtApp = useNuxtApp();
 
-  const currentOrg = useCurrentRouteOrg();
-  const computedParams = computed(() => `/${currentOrg.value}/positions`);
-
-  const toRefKey = useOrgPositionsKey();
-  const nuxtData_positions = useNuxtData<OrgPos>(toRefKey.value);
+  const router = useRouter();
+  const route = useRoute();
 
   const {
     data: positions,
     status,
     execute: triggerFetchPositions,
-  } = useLazyFetch<OrgPos>(computedParams, {
-    key: toRefKey.value,
+  } = useLazyFetch<OrgPos>(`${route.params.orgSlug}/positions`, {
+    key: "positions",
     baseURL: "/api/organization",
     deep: false,
     immediate: false,
     watch: false,
     onRequestError: () => nuxtApp.$abortFetchPositions(),
     onResponseError: () => nuxtApp.$abortFetchPositions(),
-    onResponse: ({ response }: { response: FetchResponse<OrgPos> }) => {
+    onResponse: () => {
       nuxtApp.$abortFetchPositions();
-      if (!nuxtData_positions.data.value)
-        nuxtApp.payload.data[toRefKey.value] = response._data;
     },
     getCachedData: (key, nuxtApp) => {
       if (!nuxtApp.payload.data[key]) return;
@@ -43,13 +35,17 @@
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 300 });
 
   watchEffect(() => {
+    console.log(nuxtApp.$isFetchPositions.value);
     if (nuxtApp.$isFetchPositions.value) triggerFetchPositions();
   });
 </script>
 
 <template>
   <main>
-    <NuxtLayout name="parent-organization">
+    <NuxtLayout
+      name="parent-organization"
+      @selected="(org) => router.push(`/organization/${org}`)"
+    >
       <template #default="{ organization }: { organization: SingleOrg | null }">
         <section class="container">
           <div class="w-full" v-show="isLoading === 'pending'">
