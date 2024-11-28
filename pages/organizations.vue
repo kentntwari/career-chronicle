@@ -86,6 +86,6 @@
       <lazy-app-data-organizations as="section" v-else />
     </div>
 
-    <app-skeleton-organizations v-show="isCookieNotBoolean" />
+    <app-skeleton-content v-show="isCookieNotBoolean" />
   </main>
 </template>
