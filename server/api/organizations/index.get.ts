@@ -1,7 +1,7 @@
 import type { Orgs } from "~/types";
 
 import * as authorize from "~/server/utils/authorize";
-import * as store from "@/utils/store";
+import * as store from "~/utils/keys";
 import { redis } from "@/lib/redis";
 
 export default defineEventHandler(async (event) => {
