@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from "vue";
-import type { AsyncDataRequestStatus } from "#app";
+import type { AsyncDataRequestStatus } from "nuxt/app";
 
 type DebouncedLoadingOptions = {
   minLoadingTime?: number;
