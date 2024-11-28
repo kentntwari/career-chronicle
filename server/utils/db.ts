@@ -3,11 +3,18 @@ import { Month, Prisma, Tier } from "@prisma/client";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import * as zs from "~/utils/zschemas";
 
-type UserCredentials = z.infer<typeof zs.userCredentialsSchema>;
+import * as benchmarks from "~/benchmarks";
+import {
+  userCredentials,
+  incomingNewTimelineMarkerBody,
+  queriedBenchmark,
+  incomingNewProjectBody,
+} from "~/utils/zschemas";
 
-async function findExistingUser(user: UserCredentials) {
+type UserCredentials = z.infer<typeof userCredentials>;
+
+function findExistingUser(user: UserCredentials) {
   return prisma.user.findUnique({
     where: {
       id: user.id,
@@ -173,8 +180,8 @@ export async function loadOrg(orgSlug: string) {
     if (!loadedOrg) return null;
 
     return {
-      name: loadedOrg.name,
-      slug: loadedOrg.slug,
+      name: loadedOrg.name.toLocaleLowerCase(),
+      slug: loadedOrg.slug.toLocaleLowerCase(),
       hasCreatedPositionBefore: loadedOrg.states?.firstPositionCreated || false,
       hasCreatedAchievementBefore:
         loadedOrg.states?.firstAchievementCreated || false,
@@ -209,30 +216,9 @@ export async function loadPosition(parentOrg: string, currentPosition: string) {
       select: {
         title: true,
         slug: true,
-        achievements: {
-          select: {
-            title: true,
-            slug: true,
-          },
-        },
-        challenges: {
-          select: {
-            title: true,
-            slug: true,
-          },
-        },
-        failures: {
-          select: {
-            title: true,
-            slug: true,
-          },
-        },
-        projects: {
-          select: {
-            title: true,
-            slug: true,
-          },
-        },
+        description: true,
+        monthStartedAt: true,
+        yearStartedAt: true,
       },
     });
 
@@ -300,7 +286,7 @@ export async function createNewOrg(
 
 export async function createOrgPosition(
   orgSlug: string,
-  newPosition: z.infer<typeof zs.incomingNewPositionBody>
+  newPosition: z.infer<typeof incomingNewTimelineMarkerBody>
 ) {
   try {
     const parentOrg = await prisma.organization.findUnique({
@@ -321,10 +307,11 @@ export async function createOrgPosition(
     // TODO: convert this into a transaxtion
     await prisma.position.create({
       data: {
-        title: newPosition.title,
-        slug: newPosition.slug,
+        title: newPosition.title.toLocaleLowerCase(),
+        slug: newPosition.slug.toLocaleLowerCase(),
         description: newPosition.description ?? "",
-        monthStartedAt: newPosition.tenure.month as Month,
+        monthStartedAt: newPosition.timeline.month as Month,
+        yearStartedAt: newPosition.timeline.year,
         organization: {
           connect: {
             id: parentOrg.id,
@@ -346,6 +333,8 @@ export async function createOrgPosition(
           },
         },
       });
+
+    return;
   } catch (error) {
     logAndThrow(error);
   }
@@ -362,7 +351,12 @@ export async function loadOrgPositions(
       },
       select: {
         positions: {
-          select: { title: true, slug: true },
+          select: {
+            title: true,
+            slug: true,
+            monthStartedAt: true,
+            yearStartedAt: true,
+          },
         },
       },
     });
@@ -389,6 +383,255 @@ export async function loadOrgStates(orgSlug: string) {
         },
       },
     });
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+function findExistingPosition(parentOrgSlug: string, positionSlug: string) {
+  return prisma.position.findUnique({
+    where: {
+      slug: positionSlug.toLocaleLowerCase(),
+      organization: {
+        slug: parentOrgSlug.toLocaleLowerCase(),
+      },
+    },
+    select: {
+      id: true,
+    },
+  });
+}
+
+export async function loadPositionBenchmarks(
+  parentOrgSlug: string,
+  positionSlug: string,
+  benchmark: z.infer<typeof queriedBenchmark>
+) {
+  try {
+    const position = await findExistingPosition(parentOrgSlug, positionSlug);
+
+    if (!position) throw new Error("Position not found");
+
+    const defaults = {
+      where: {
+        positionId: position.id,
+      },
+      select: {
+        title: true,
+        slug: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    };
+
+    switch (benchmark) {
+      case benchmarks.ACHIEVEMENTS:
+        return await prisma.achievement.findMany({
+          ...defaults,
+          select: {
+            ...defaults.select,
+            monthOccuredAt: true,
+            yearOccuredAt: true,
+          },
+        });
+
+      case benchmarks.FAILURES:
+        return await prisma.failure.findMany({
+          ...defaults,
+          select: {
+            ...defaults.select,
+            monthOccuredAt: true,
+            yearOccuredAt: true,
+          },
+        });
+
+      case benchmarks.PROJECTS:
+        return await prisma.project.findMany({
+          ...defaults,
+          select: {
+            ...defaults.select,
+            monthStartedAt: true,
+            yearStartedAt: true,
+          },
+        });
+
+      case benchmarks.CHALLENGES:
+        return await prisma.challenge.findMany({
+          ...defaults,
+          select: {
+            ...defaults.select,
+            monthOccuredAt: true,
+            yearOccuredAt: true,
+          },
+        });
+
+      default:
+        throw new Error("Unrecognized benchmarj");
+    }
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+const payloadSchema = incomingNewTimelineMarkerBody
+  .extend({
+    createdAt: z.date(),
+    updatedAt: z.date(),
+  })
+  .merge(
+    incomingNewProjectBody.extend({
+      createdAt: z.date(),
+      updatedAt: z.date(),
+    })
+  );
+export async function createPositionBenchmark(
+  parentOrgSlug: string,
+  positionSlug: string,
+  benchmark: z.infer<typeof queriedBenchmark>,
+  payload: z.infer<typeof payloadSchema>
+) {
+  try {
+    const position = await findExistingPosition(parentOrgSlug, positionSlug);
+
+    if (!position) throw new Error("Position not found");
+
+    const parentOrg = await prisma.organization.findUnique({
+      where: {
+        slug: parentOrgSlug.toLocaleLowerCase(),
+      },
+      select: {
+        states: {
+          select: {
+            firstAchievementCreated: true,
+            firstChallengeCreated: true,
+            firstFailureCreated: true,
+            firstProjectCreated: true,
+          },
+        },
+      },
+    });
+
+    const defaults = {
+      title: payload.title.toLocaleLowerCase(),
+      slug: payload.slug.toLocaleLowerCase(),
+      description: payload.description ?? "",
+      createdAt: payload.createdAt,
+      updatedAt: payload.updatedAt,
+      position: {
+        connect: {
+          id: position.id,
+        },
+      },
+    };
+
+    switch (true) {
+      case benchmark === benchmarks.PROJECTS: {
+        await prisma.project.create({
+          data: {
+            ...defaults,
+            monthStartedAt: payload.timeline.month as Month,
+            yearStartedAt: payload.timeline.year,
+          },
+        });
+
+        if (!parentOrg?.states?.firstProjectCreated)
+          await prisma.organization.update({
+            where: {
+              slug: parentOrgSlug.toLocaleLowerCase(),
+            },
+            data: {
+              states: {
+                update: {
+                  firstProjectCreated: true,
+                },
+              },
+            },
+          });
+
+        return;
+      }
+
+      case benchmark === benchmarks.CHALLENGES: {
+        await prisma.challenge.create({
+          data: {
+            ...defaults,
+            monthOccuredAt: payload.timeline.month as Month,
+            yearOccuredAt: payload.timeline.year,
+          },
+        });
+
+        if (parentOrg?.states?.firstChallengeCreated)
+          await prisma.organization.update({
+            where: {
+              slug: parentOrgSlug.toLocaleLowerCase(),
+            },
+            data: {
+              states: {
+                update: {
+                  firstChallengeCreated: true,
+                },
+              },
+            },
+          });
+
+        return;
+      }
+
+      case benchmark === benchmarks.FAILURES: {
+        await prisma.failure.create({
+          data: {
+            ...defaults,
+            monthOccuredAt: payload.timeline.month as Month,
+            yearOccuredAt: payload.timeline.year,
+          },
+        });
+
+        if (parentOrg?.states?.firstFailureCreated)
+          await prisma.organization.update({
+            where: {
+              slug: parentOrgSlug.toLocaleLowerCase(),
+            },
+            data: {
+              states: {
+                update: {
+                  firstFailureCreated: true,
+                },
+              },
+            },
+          });
+
+        return;
+      }
+
+      case benchmark === benchmarks.ACHIEVEMENTS: {
+        await prisma.achievement.create({
+          data: {
+            ...defaults,
+            monthOccuredAt: payload.timeline.month as Month,
+            yearOccuredAt: payload.timeline.year,
+          },
+        });
+
+        if (parentOrg?.states?.firstAchievementCreated)
+          await prisma.organization.update({
+            where: {
+              slug: parentOrgSlug.toLocaleLowerCase(),
+            },
+            data: {
+              states: {
+                update: {
+                  firstAchievementCreated: true,
+                },
+              },
+            },
+          });
+
+        return;
+      }
+
+      default:
+        throw new Error("Unrecognized benchmark");
+    }
   } catch (error) {
     logAndThrow(error);
   }

@@ -1,5 +1,5 @@
 import { checkExistingDbUser } from "~/server/utils/db";
-import { resolveUser } from "~/utils/store";
+import { resolveUser } from "~/utils/keys";
 
 // TODO: Might have to set httOnly to true
 // for now it's fine since it's just for client side purposes

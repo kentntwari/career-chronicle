@@ -2,7 +2,7 @@ import { H3Error } from "h3";
 import type { UserType } from "@kinde-oss/kinde-typescript-sdk";
 import type { Plan } from "@prisma/client";
 import * as authorize from "@/server/utils/authorize";
-import * as store from "~/utils/store";
+import * as store from "~/utils/keys";
 import { createFreePlan } from "~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
