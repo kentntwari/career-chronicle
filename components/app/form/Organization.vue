@@ -6,6 +6,7 @@
     formSubmitted: [void];
   }>();
 
+  // TODO: Must handle hidden errors like missing slug
   const { errors, handleSubmit, defineField, isSubmitting } = useForm({
     validationSchema: toTypedSchema(newOrg),
   });
@@ -13,7 +14,6 @@
   const previousOrgs = ref<Orgs>([]);
 
   const { data: currentOrgs } = useNuxtData<Orgs>("orgs");
-
   const onSubmit = handleSubmit((values) => {
     const newOrg = {
       name: values.name.toLowerCase(),

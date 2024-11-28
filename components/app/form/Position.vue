@@ -1,34 +1,70 @@
 <script lang="ts" setup>
+  import type { SingleOrg, OrgPos } from "~/types";
+  import type { Month } from "@prisma/client";
+
+  import { z } from "zod";
   import { ChevronDown as LucideChevronDownIcon } from "lucide-vue-next";
 
-  import { newPosition } from "~/utils/zschemas";
+  import months from "~/months";
+
+  const props = defineProps<{
+    parentOrganization: SingleOrg["slug"];
+  }>();
 
   const emit = defineEmits<{
     cancel: [void];
     formSubmitted: [void];
   }>();
 
+  // TODO: Must handle hidden errors like missing slug
   const { handleSubmit, defineField, errors, isSubmitting } = useForm({
-    validationSchema: toTypedSchema(newPosition),
+    validationSchema: toTypedSchema(newTimelineMarker),
   });
 
+  const orgPosKey = useOrgPositionsKey();
+  const { data: currentPositions } = useNuxtData<OrgPos>(orgPosKey.value);
+
+  const previousPositions = ref<OrgPos>([]);
+
   const [title, titleAtts] = defineField("title");
-  const [month, monthAttrs] = defineField("tenure.month");
-  const [year, yearAttrs] = defineField("tenure.year");
+  const [month, monthAttrs] = defineField("timeline.month");
+  const [year, yearAttrs] = defineField("timeline.year");
   const [desc, descAttrs] = defineField("description");
-  const currentOrg = useRoute().params.orgSlug;
 
   const onSubmit = handleSubmit((values) => {
-    const newPosition = {
+    const payload = {
       ...values,
+      title: values.title.toLocaleLowerCase(),
       slug: generateSlug(values.title.toLowerCase()),
-    };
+      description: values.description?.toLocaleLowerCase(),
+    } satisfies z.infer<typeof incomingNewTimelineMarkerBody>;
 
     emit("formSubmitted");
 
-    $fetch("/api/organization/" + currentOrg + "/position", {
+    $fetch("/api/organization/" + props.parentOrganization + "/position", {
       method: "POST",
-      body: newPosition,
+      body: payload,
+      onRequest() {
+        const altered = {
+          title: payload.title.toLocaleLowerCase(),
+          slug: generateSlug(payload.title.toLowerCase()),
+          monthStartedAt: payload.timeline.month as Month,
+          yearStartedAt: payload.timeline.year,
+        };
+        if (currentPositions.value !== null) {
+          previousPositions.value = currentPositions.value;
+          currentPositions.value.push(altered);
+        } else {
+          currentPositions.value = [];
+          currentPositions.value.push(altered);
+        }
+      },
+      onRequestError() {
+        currentPositions.value = previousPositions.value; // Rollback the data if the request failed.
+      },
+      async onResponse() {
+        await refreshNuxtData(orgPosKey.value); // Invalidate orgs in the background if the request succeeded.
+      },
     });
   });
 </script>
@@ -82,8 +118,8 @@
                 <select-viewport class="p-[5px]">
                   <select-group>
                     <select-item
-                      v-for="(month, index) in memoizedMonthArray()"
-                      :key="index"
+                      v-for="(month, index) in months"
+                      :key="month"
                       class="text-xs text-neutral-grey-1000 leading-none flex items-center h-8 relative select-none data-[disabled]:text-neutral-grey-700 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-success-400 data-[highlighted]:text-neutral-grey-1100"
                       :value="month"
                     >
@@ -103,7 +139,7 @@
             </select-portal>
           </select-root>
           <small class="block text-xs text-danger-700">{{
-            errors["tenure.month"]
+            errors["timeline.month"]
           }}</small>
         </div>
         <div class="min-h-[66px] space-y-[5px]">
@@ -116,7 +152,7 @@
             class="min-w-[150px]"
           />
           <small class="text-xs text-danger-700">{{
-            errors["tenure.year"]
+            errors["timeline.year"]
           }}</small>
         </div>
       </div>
