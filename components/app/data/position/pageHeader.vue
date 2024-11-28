@@ -1,15 +1,19 @@
 <script lang="ts" setup>
   import type { OrgPos } from "~/types";
 
+  import { useWindowSize } from "@vueuse/core";
+
   import {
     X as LucideExitIcon,
     MapPin as LucideMapPinIcon,
     ChevronRight as LucideChevronRightIcon,
-    ChevronDown as LucideChevronDownIcon,
+    Info as LucideInfoIcon,
   } from "lucide-vue-next";
 
-  const props = defineProps<{
+  defineProps<{
     position: string;
+    startedAt?: string;
+    description?: string;
   }>();
 
   const emit = defineEmits<{
@@ -18,29 +22,27 @@
 
   const route = useRoute();
 
-  const defaultSelection = useState<string>("selected-position");
-
   const k = useOrgPositionsKey();
+  const { data: cachedOrgPositions } = useNuxtData<OrgPos>(k.value);
 
-  const { data: cachedOrgPositions } = useNuxtData<OrgPos>("positions");
-  const orgPositions = useState<OrgPos>(
-    "org:" + k.value + "positions",
-    () => []
+  const orgPositions = useState<OrgPos>("positions", () => []);
+  const selectItems = computed(() =>
+    orgPositions.value.map(({ title }) => title)
   );
 
   const nuxtApp = useNuxtApp();
 
   watch(
-    [() => cachedOrgPositions.value, () => props.position],
-    async ([cached, position]) => {
-      defaultSelection.value = position;
-
+    () => cachedOrgPositions.value,
+    async (cached) => {
       if (cached) orgPositions.value = cached;
       else {
         orgPositions.value = await useRequestFetch()<OrgPos>(
-          "/api/organization/" + route.params.ogSlug + "/positions"
+          "/api/organization/" +
+            stringifyRoute(route.params.orgSlug) +
+            "/positions"
         );
-        nuxtApp.payload.data["positions"] = orgPositions.value;
+        nuxtApp.payload.data[k.value] = orgPositions.value;
       }
     },
     {
@@ -55,6 +57,8 @@
     if (!selected) return;
     emit("selected", selected.slug);
   }
+
+  const { width } = useWindowSize();
 </script>
 
 <template>
@@ -62,7 +66,7 @@
     class="w-full min-h-12 bg-neutral-grey-200 px-3 py-2"
     role="navigation"
   >
-    <div class="container px-3 flex items-center justify-between">
+    <div class="container flex items-center justify-between">
       <div class="flex items-center space-x-1">
         <figure
           class="w-8 h-8 bg-[#3E4756] flex justify-center items-center rounded-lg"
@@ -76,57 +80,47 @@
             stroke-width="3"
           />
         </figure>
-        <select-root
-          v-model="defaultSelection"
-          @update:model-value="handleChange"
+
+        <ui-select
+          :default="position"
+          :items="selectItems"
+          :placeholder="'Select a position'"
+          @update:selected="(pos) => handleChange(pos)"
+        />
+
+        <ui-popover
+          side="bottom"
+          :side-offset="10"
+          :align-offset="0"
+          :align="width > 1024 ? 'start' : 'end'"
+          class="space-y-2"
+          v-if="!!startedAt || !!description"
         >
-          <select-trigger
-            class="inline-flex min-w-[160px] items-center justify-between rounded px-[15px] text-sm leading-none h-[35px] gap-[5px] border border-neutral-grey-700 data-[placeholder]:text-neutral-grey-700 outline-none"
-            aria-label="Select organization"
-          >
-            <select-value
-              placeholder="Select an organization"
-              class="text-neutral-grey-1300"
-            />
-            <lucide-chevron-down-icon />
-          </select-trigger>
-
-          <select-portal>
-            <select-content
-              class="min-w-[160px] bg-[#fff] rounded shadow-[0px_10px_38px_-10px_rgba(22,_23,_24,_0.20),_0px_10px_20px_-15px_rgba(22,_23,_24,_0.2)] z-[100]"
+          <template #trigger="{ open }">
+            <button type="button" @click="open()" class="pl-2">
+              <lucide-info-icon :size="20" color="#3E4756" stroke-width="3" />
+            </button>
+          </template>
+          <template #content>
+            <span
+              class="capitalize font-medium text-sm"
+              :class="[!startedAt ? 'italic text-neutral-grey-900' : '']"
             >
-              <select-scroll-up-button
-                class="flex items-center justify-center h-[25px] bg-white text-violet11 cursor-default"
-              >
-                <Icon icon="radix-icons:chevron-up" />
-              </select-scroll-up-button>
-
-              <select-viewport class="p-[5px]">
-                <select-group>
-                  <select-item
-                    v-for="({ title }, index) in orgPositions"
-                    :key="index"
-                    class="text-xs text-neutral-grey-900 leading-none flex items-center h-8 relative select-none data-[disabled]:text-neutral-grey-700 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-success-400 data-[highlighted]:text-neutral-grey-1100"
-                    :value="title"
-                  >
-                    <select-item-text>
-                      {{ title }}
-                    </select-item-text>
-                  </select-item>
-                </select-group>
-              </select-viewport>
-
-              <select-scroll-down-button
-                class="flex items-center justify-center h-[25px] bg-white cursor-default"
-              >
-                <lucide-chevron-down-icon />
-              </select-scroll-down-button>
-            </select-content>
-          </select-portal>
-        </select-root>
+              {{ !!startedAt ? `Started ${startedAt}` : "No date provided" }}
+            </span>
+            <small
+              class="block text-sm"
+              :class="[!description ? 'italic text-neutral-grey-900' : '']"
+            >
+              {{
+                !!description ? `${description}` : "No description provided"
+              }}
+            </small>
+          </template>
+        </ui-popover>
       </div>
 
-      <nuxt-link to="/organizations">
+      <nuxt-link :to="`/organization/${stringifyRoute(route.params.orgSlug)}`">
         <span class="md:hidden">
           <lucide-exit-icon :size="20" color="#3E4756" stroke-width="3" />
         </span>

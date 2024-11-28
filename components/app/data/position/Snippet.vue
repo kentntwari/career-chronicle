@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import { Flag as LucideFlagIcon } from "lucide-vue-next";
+  import { MapPin as LucideMapPinIcon } from "lucide-vue-next";
 
   interface Props {
     data: {
@@ -15,14 +15,6 @@
     () =>
       `/organization/${props.parentOrganization}/position/${props.data.slug}`
   );
-
-  async function openNewTab(url: string) {
-    return await navigateTo(encodeURI(url), {
-      open: {
-        target: "_blank",
-      },
-    });
-  }
 </script>
 
 <template>
@@ -32,7 +24,7 @@
         :to="encodeURI(positionUrl)"
         class="hover:bg-neutral-grey-700 inline-flex items-center gap-x-2"
       >
-        <lucide-flag-icon :size="18" class="fill-body"></lucide-flag-icon>
+        <lucide-map-pin-icon :size="18"></lucide-map-pin-icon>
         <span class="font-medium capitalize">{{ data.title }}</span>
       </NuxtLink>
     </context-menu-trigger>

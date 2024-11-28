@@ -14,7 +14,7 @@
 
 <template>
   <nav class="bg-top-nav h-16 px-3 border border-neutral-grey-600">
-    <div class="w-full h-full container px-3 flex items-center justify-between">
+    <div class="w-full h-full container flex items-center justify-between">
       <NuxtLink
         to="/organizations"
         class="relative font-bold text-md text-logo before:content-['ALPHA'] before:absolute before:-top-2 before:-right-6 before:font-medium before:text-3xs before:text-[#1751D0]"
