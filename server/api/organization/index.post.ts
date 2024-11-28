@@ -5,7 +5,7 @@ import { redis } from "@/lib/redis";
 import * as authorize from "@/server/utils/authorize";
 import { validateSubmission } from "@/server/utils/submissions";
 import { enforcePlanLimits } from "~/server/utils/limits";
-import * as store from "~/utils/store";
+import * as store from "~/utils/keys";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,7 +32,8 @@ export default defineEventHandler(async (event) => {
     await Promise.all([
       // TODO: extend unstorage with redis to unify cache method
       redis.rpush<Orgs[number]>(store.resolveUserOrgs(user.email), {
-        ...submitted,
+        name: submitted.name.toLocaleLowerCase(),
+        slug: submitted.slug.toLocaleLowerCase(),
       }),
       // write to the database
       createNewOrg(
@@ -42,8 +43,8 @@ export default defineEventHandler(async (event) => {
           lastName: user.family_name,
           email: user.email,
         },
-        submitted.name,
-        submitted.slug
+        submitted.name.toLocaleLowerCase(),
+        submitted.slug.toLocaleLowerCase()
       ),
     ]);
     return null;
