@@ -1,6 +1,10 @@
 import type {
   Organization,
   Position,
+  Achievement,
+  Failure,
+  Project,
+  Challenge,
   OrganizationStates,
 } from "@prisma/client";
 import type {
@@ -10,7 +14,8 @@ import type {
 } from "@kinde-oss/kinde-typescript-sdk";
 
 import * as b from "~/utils/button";
-import type { loadPosition } from "./server/utils/db";
+import * as benchmarks from "~/constants/benchmarks";
+import type { loadPosition, loadPositionBenchmarks } from "./server/utils/db";
 
 export type AuthState =
   | { loggedIn: true; user: UserType }
@@ -29,15 +34,20 @@ export type KindeContext = {
 export type Orgs = Pick<Organization, "name" | "slug">[];
 export type SingleOrg = NonNullable<Awaited<ReturnType<typeof loadOrg>>>;
 export type SinglePos = NonNullable<Awaited<ReturnType<typeof loadPosition>>>;
-export type ApiFetchedOrgs = Orgs[number] | null | undefined;
-export type OrgPos = Pick<Position, "title" | "slug">[];
-export type OrgStates = Omit<OrganizationStates, "id">;
-export type CachedPosition = Omit<
-  Position,
-  "id" | "createdAt" | "updatedAt" | "organizationId"
+export type Benchmarks = NonNullable<
+  Awaited<ReturnType<typeof loadPositionBenchmarks>>
 >;
+
+export type ApiFetchedOrgs = Orgs[number] | null | undefined;
+export type OrgPos = Pick<
+  Position,
+  "title" | "slug" | "monthStartedAt" | "yearStartedAt"
+>[];
+export type OrgStates = Omit<OrganizationStates, "id">;
 
 export interface ButtonVariants {
   variant?: NonNullable<Parameters<typeof b.variants>[0]>["variant"];
   size?: NonNullable<Parameters<typeof b.variants>[0]>["size"];
 }
+
+export type Benchmark = (typeof benchmarks)[keyof typeof benchmarks];
