@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-  import type { UseFetchOptions } from "#app";
+  import type { UseFetchOptions } from "nuxt/app";
   import type { FetchResponse } from "ofetch";
   import type { SingleOrg } from "~/types";
 
@@ -9,24 +9,23 @@
 
   const route = useRoute();
 
+  const isOrganizationPath = useMatchOrganizationPath();
+
   const { $isFetchPositions, $fetchPositions, $abortFetchPositions } =
     useNuxtApp();
 
   const k = useOrganizationKey();
-  const OPTIONS_ORGANIZATION: UseFetchOptions<SingleOrg> = {
+  const OPTIONS: UseFetchOptions<SingleOrg> = {
     key: k.value,
     baseURL: "/api/organization",
     onRequest: () => {
       if ($isFetchPositions.value) $abortFetchPositions();
     },
     onResponse: ({ response }: { response: FetchResponse<SingleOrg> }) => {
-      if (
-        response._data?.hasCreatedPositionBefore &&
-        useMatchOrganizationPath().value
-      )
+      if (response._data?.hasCreatedPositionBefore && isOrganizationPath.value)
         $fetchPositions();
 
-      if (!useMatchOrganizationPath().value && $isFetchPositions.value)
+      if (!isOrganizationPath.value && $isFetchPositions.value)
         $abortFetchPositions();
     },
     getCachedData(key, nuxtApp) {
@@ -40,7 +39,7 @@
     status,
     error: errorFetchingOrganization,
   } = await useLazyFetch<SingleOrg>(`/${route.params.orgSlug}`, {
-    ...OPTIONS_ORGANIZATION,
+    ...OPTIONS,
   });
 
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
@@ -71,7 +70,7 @@
       </slot>
     </div>
 
-    <div :class="[isLoading === 'pending' ? 'invisible' : 'visible']" v-else>
+    <div :class="[isLoading === 'pending' ? 'invisible' : 'visible flex-1 flex flex-col']" v-else>
       <small v-if="!organization">Could not find organization</small>
       <slot :organization="organization" v-else />
     </div>
