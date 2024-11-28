@@ -2,7 +2,7 @@
   import type { SingleOrg } from "~/types";
   import type { OrgPos } from "~/types";
 
-  import months from "~/months";
+  import months from "~/constants/months";
 
   interface Props {
     data: OrgPos;

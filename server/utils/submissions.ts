@@ -1,6 +1,6 @@
 import { H3Event } from "h3";
 import { z } from "zod";
-import * as benchmark from "~/benchmarks";
+import * as benchmark from "~/constants/benchmarks";
 import {
   incomingNewOrgBody,
   incomingNewTimelineMarkerBody,

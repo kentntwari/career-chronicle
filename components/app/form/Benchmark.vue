@@ -4,8 +4,8 @@
   import { ChevronDown as LucideChevronDownIcon } from "lucide-vue-next";
 
   import { newProject, newTimelineMarker } from "~/utils/zschemas";
-  import * as benchmarks from "~/benchmarks";
-  import months from "~/months";
+  import * as benchmarks from "~/constants/benchmarks";
+  import months from "~/constants/months";
 
   const props = defineProps<{
     parentOrganization: SingleOrg["slug"];

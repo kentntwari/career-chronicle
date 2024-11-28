@@ -1,4 +1,4 @@
-import * as benchmarks from "~/benchmarks";
+import * as benchmarks from "~/constants/benchmarks";
 
 export function useOrganizationKey() {
   const route = useRoute();

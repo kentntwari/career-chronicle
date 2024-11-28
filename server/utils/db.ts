@@ -4,7 +4,7 @@ import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
 
-import * as benchmarks from "~/benchmarks";
+import * as benchmarks from "~/constants/benchmarks";
 import {
   userCredentials,
   incomingNewTimelineMarkerBody,

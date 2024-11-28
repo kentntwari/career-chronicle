@@ -4,7 +4,7 @@
   import { useWindowSize } from "@vueuse/core";
   import { Plus as LucidePlusIcon } from "lucide-vue-next";
 
-  import * as benchmarks from "~/benchmarks";
+  import * as benchmarks from "~/constants/benchmarks";
   import { resolveProvidedKeys } from "~/utils/keys";
   import { useQueriedBenchmarkKey } from "~/composables/useFetchKeys";
 

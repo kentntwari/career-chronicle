@@ -8,7 +8,7 @@
     TrendingDown as LucideTrendingDownIcon,
   } from "lucide-vue-next";
 
-  import * as benchmarks from "~/benchmarks";
+  import * as benchmarks from "~/constants/benchmarks";
   import { resolveProvidedKeys } from "~/utils/keys";
 
   const props = defineProps<{

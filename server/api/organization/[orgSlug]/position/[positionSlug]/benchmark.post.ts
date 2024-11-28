@@ -11,7 +11,7 @@ import type { SingleOrg, Benchmarks, SinglePos } from "~/types";
 import { z } from "zod";
 import { redis } from "~/lib/redis";
 import * as store from "~/utils/keys";
-import * as benchmarks from "~/benchmarks";
+import * as benchmarks from "~/constants/benchmarks";
 import {
   queriedBenchmark,
   incomingNewTimelineMarkerBody,

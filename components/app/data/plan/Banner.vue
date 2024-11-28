@@ -2,7 +2,7 @@
   import type { Plan } from "@prisma/client";
   import type { Benchmark } from "~/types";
 
-  import * as benchmarks from "~/benchmarks";
+  import * as benchmarks from "~/constants/benchmarks";
 
   interface Props {
     currentCount: string | number;

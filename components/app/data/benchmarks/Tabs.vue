@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { TabsIndicator, TabsList, TabsRoot, TabsTrigger } from "radix-vue";
 
-  import * as benchmarks from "~/benchmarks";
+  import * as benchmarks from "~/constants/benchmarks";
   import { resolveProvidedKeys } from "~/utils/keys";
 
   const props = defineProps<{

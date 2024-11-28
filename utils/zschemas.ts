@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { getYear } from "date-fns";
-import months from "~/months";
-import * as benchmarks from "~/benchmarks";
+import months from "~/constants/months";
+import * as benchmarks from "~/constants/benchmarks";
 
 export const userCredentials = z.object({
   id: z.string(),

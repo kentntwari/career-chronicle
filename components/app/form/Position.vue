@@ -5,7 +5,7 @@
   import { z } from "zod";
   import { ChevronDown as LucideChevronDownIcon } from "lucide-vue-next";
 
-  import months from "~/months";
+  import months from "~/constants/months";
 
   const props = defineProps<{
     parentOrganization: SingleOrg["slug"];

@@ -26,7 +26,7 @@
 <template>
   <div class="min-h-screen min-h-[100dvh] flex flex-col">
     <app-navigation></app-navigation>
-    <div class="flex-1">
+    <div class="flex-1 flex flex-col">
       <NuxtLayout> <NuxtPage /></NuxtLayout>
     </div>
   </div>

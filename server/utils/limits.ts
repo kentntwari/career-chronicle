@@ -7,7 +7,7 @@ import { UserType } from "@kinde-oss/kinde-typescript-sdk";
 
 import { redis } from "~/lib/redis";
 import * as store from "~/utils/keys";
-import * as benchmarks from "~/benchmarks";
+import * as benchmarks from "~/constants/benchmarks";
 import { queriedBenchmark } from "~/utils/zschemas";
 
 const ORGANIZATION = "organization" as const;
