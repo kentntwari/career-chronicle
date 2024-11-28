@@ -143,18 +143,20 @@ model Challenge {
 }
 
 model Project {
-  id            String    @id @default(cuid())
-  title         String    @db.VarChar(250)
-  slug          String    @unique
-  description   String?   @db.VarChar(1000)
-  isAchievement Boolean   @default(false) @map("is_achievement")
-  isFailure     Boolean   @default(false) @map("is_failure")
-  position      Position? @relation(fields: [positionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  positionId    String?   @map("position_id")
-  startedAt     DateTime? @map("started_at")
-  finishedAt    DateTime? @map("finished_at")
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  id              String    @id @default(cuid())
+  title           String    @db.VarChar(250)
+  slug            String    @unique
+  description     String?   @db.VarChar(1000)
+  isAchievement   Boolean   @default(false) @map("is_achievement")
+  isFailure       Boolean   @default(false) @map("is_failure")
+  position        Position? @relation(fields: [positionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  positionId      String?   @map("position_id")
+  monthStartedAt  Month?    @map("month_started_at")
+  yearStartedAt   Int?      @map("year_started_at")
+  monthFinishedAt Month?    @map("month_finished_at")
+  yearFinishedAt  Int?      @map("year_finished_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@index([id, slug], name: "project_idx")
   @@map("project")
