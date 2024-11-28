@@ -18,7 +18,7 @@
     },
   });
 
-  const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 300 });
+  const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
 
   const createdOrgs = computed(() => {
     return !data.value ? 0 : data.value.length;
@@ -27,21 +27,26 @@
 
 <template>
   <div class="space-y-14">
-    <slot name="banner">
-      <app-data-organizations-banner :orgs="data?.length ?? '??'" />
-    </slot>
+    <app-data-plan-banner
+      :target="'ORGANIZATIONS'"
+      :current-count="data?.length ?? '??'"
+    />
     <component :is="as" :class="cn('space-y-6', $attrs.class ?? '')">
       <div class="h-9 border-b border-neutral-grey-600">
         <h1 class="capitalize font-bold text-md">
           Organizations ({{ createdOrgs }})
         </h1>
       </div>
-      <lazy-app-skeleton-organizations v-if="isLoading === 'pending'" />
-      <div class="space-y-8" v-else>
+      <app-skeleton-content v-show="isLoading === 'pending'" />
+      <div class="space-y-8" v-show="isLoading !== 'pending'">
         <p v-if="!data">No organizations found</p>
         <p v-else-if="data.length === 0">No organizations created yet</p>
         <div class="flex flex-col gap-4" v-else>
-          <app-data-organization-snippet v-for="org in data" :data="org" />
+          <app-data-organization-snippet
+            v-for="org in data"
+            :data="org"
+            :key="org.slug"
+          />
         </div>
 
         <ui-dialog>
