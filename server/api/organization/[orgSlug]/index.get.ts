@@ -4,7 +4,7 @@ import type { SingleOrg } from "~/types";
 
 import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
-import { resolveOrg } from "~/utils/store";
+import { resolveOrg } from "~/utils/keys";
 import { loadOrg } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
@@ -13,7 +13,10 @@ export default defineEventHandler(async (event) => {
   const { permissions } = await kinde.getPermissions();
   authorize.hasPermissions(permissions as authorize.Permissions, "read:orgs");
 
-  const organization = validateParams(event, "organization");
+  const organization = validateParams(
+    event,
+    "organization"
+  ).toLocaleLowerCase();
 
   const user = await kinde.getUser();
 

@@ -1,9 +1,8 @@
-import { H3Event } from "h3";
 import type { Month } from "@prisma/client";
-import type { SingleOrg, OrgPos, CachedPosition } from "~/types";
+import type { SingleOrg, OrgPos, SinglePos } from "~/types";
 
 import { redis } from "~/lib/redis";
-import * as store from "~/utils/store";
+import * as store from "~/utils/keys";
 import * as authorize from "@/server/utils/authorize";
 import { validateParams } from "~/server/utils/params";
 import { enforcePlanLimits } from "~/server/utils/limits";
@@ -17,7 +16,10 @@ export default defineEventHandler(async (event) => {
       "update:position"
     );
 
-    const parentOrganization = validateParams(event, "organization");
+    const parentOrganization = validateParams(
+      event,
+      "organization"
+    ).toLocaleLowerCase();
 
     const user = await kinde.getUser();
 
@@ -27,7 +29,7 @@ export default defineEventHandler(async (event) => {
 
     const submitted = await validateSubmission(event, "position");
 
-    // Cannot be nullbecause it must traverse the parent organization and
+    // Cannot be null because it must traverse the parent organization and
     // set it before it reaches this point
     const cachedOrganization = (await redis.hgetall<SingleOrg>(
       store.resolveOrg(user.email, parentOrganization)
@@ -39,8 +41,10 @@ export default defineEventHandler(async (event) => {
       redis.rpush<OrgPos[number]>(
         store.resolveOrgPositions(user.email, parentOrganization),
         {
-          title: submitted.title,
-          slug: submitted.slug,
+          title: submitted.title.toLocaleLowerCase(),
+          slug: submitted.slug.toLocaleLowerCase(),
+          monthStartedAt: submitted.timeline.month.toUpperCase() as Month,
+          yearStartedAt: submitted.timeline.year,
         }
       ),
       // 2
@@ -54,12 +58,12 @@ export default defineEventHandler(async (event) => {
       redis.hset(
         store.resolvePos(user.email, parentOrganization, submitted.slug),
         {
-          title: submitted.title,
-          slug: submitted.slug,
-          description: submitted.description ?? null,
-          monthStartedAt: submitted.tenure.month.toUpperCase() as Month,
-          yearStartedAt: submitted.tenure.year,
-        } satisfies CachedPosition
+          title: submitted.title.toLocaleLowerCase(),
+          slug: submitted.slug.toLocaleLowerCase(),
+          description: submitted.description?.toLocaleLowerCase() ?? null,
+          monthStartedAt: submitted.timeline.month.toUpperCase() as Month,
+          yearStartedAt: submitted.timeline.year,
+        }
       ),
       // 4
       createOrgPosition(parentOrganization, submitted),
