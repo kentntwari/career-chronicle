@@ -1,4 +1,6 @@
 <script setup lang="ts">
+  import type { Orgs } from "~/types";
+
   definePageMeta({
     middleware: ["protected"],
   });
@@ -24,6 +26,19 @@
     if (isFirstTimeUser.value || isCookieNotBoolean.value)
       await $fetch("/api/user/first-time");
   });
+
+  const { data: organizations, status } = await useLazyFetch<Orgs>(
+    "/api/organizations",
+    {
+      key: "orgs",
+      getCachedData: (_key, nuxtApp) => {
+        if (!nuxtApp.payload.data.orgs) return;
+        return nuxtApp.payload.data.orgs;
+      },
+    }
+  );
+
+  const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
 </script>
 
 <!-- TODO: Fix hydration mismatch -->
@@ -83,7 +98,62 @@
         </ui-dialog>
       </section>
 
-      <lazy-app-data-organizations as="section" v-else />
+      <template v-else>
+        <app-skeleton-content v-show="isLoading === 'pending'" />
+
+        <section class="space-y-6">
+          <app-data-plan-banner
+            :target="'ORGANIZATIONS'"
+            :current-count="organizations?.length ?? '??'"
+            class="mb-14"
+          />
+
+          <div class="h-9 border-b border-neutral-grey-600">
+            <h1 class="capitalize font-bold text-md">
+              Organizations ({{ organizations?.length }})
+            </h1>
+          </div>
+
+          <div class="space-y-8" v-show="isLoading !== 'pending'">
+            <p v-if="!organizations">No organizations found</p>
+            <p v-else-if="organizations.length === 0">
+              No organizations created yet
+            </p>
+            <div class="flex flex-col gap-4" v-else>
+              <app-data-organization-snippet
+                v-for="org in organizations"
+                :data="org"
+                :key="org.slug"
+              />
+            </div>
+
+            <ui-dialog>
+              <template #trigger="{ open: createOrganization }">
+                <app-create-organization-btn
+                  :data="organizations ?? []"
+                  :variant="'link'"
+                  :size="'link'"
+                  @create="createOrganization()"
+                >
+                  Add organization
+                </app-create-organization-btn>
+              </template>
+              <template v-slot="{ close }" #default>
+                <visually-hidden>
+                  <dialog-title></dialog-title>
+                </visually-hidden>
+                <visually-hidden
+                  ><dialog-description></dialog-description
+                ></visually-hidden>
+                <app-form-organization
+                  @cancel="close()"
+                  @form-submitted="close()"
+                />
+              </template>
+            </ui-dialog>
+          </div>
+        </section>
+      </template>
     </div>
 
     <app-skeleton-content v-show="isCookieNotBoolean" />
