@@ -1,24 +1,58 @@
 <script lang="ts" setup>
   import type { Benchmark } from "~/types";
 
-  defineProps<{
-    category: Benchmark;
+  import * as benchmarks from "~/constants/benchmarks";
+  import { resolveProvidedKeys } from "~/utils/keys";
+
+  const parentOrganization = inject<string>(
+    resolveProvidedKeys().benchmark.parentOrganization
+  )!;
+  const parentPosition = inject<Benchmark>(
+    resolveProvidedKeys().benchmark.parentPosition
+  )!;
+  const parentBenchmark = inject<Benchmark>(
+    resolveProvidedKeys().benchmark.kind
+  )!;
+
+  const props = defineProps<{
     data: {
       title: string;
       slug: string;
     };
   }>();
+
+  const computedClass = computed<string>(() => {
+    switch (true) {
+      case parentBenchmark.toLocaleLowerCase() ===
+        benchmarks.CHALLENGES.toLocaleLowerCase():
+        return "bg-neutral-grey-300 text-neutral-grey-1100 shadow-[0_5px_13px_rgba(163,163,163,1)]";
+
+      case parentBenchmark.toLocaleLowerCase() ===
+        benchmarks.ACHIEVEMENTS.toLocaleLowerCase():
+        return "bg-success-100/50 text-success-900 shadow-[0_5px_13px_rgba(25,184,74,1)]";
+
+      default:
+        return "";
+    }
+  });
 </script>
 
 <template>
   <context-menu-root>
     <context-menu-trigger as-child>
       <NuxtLink
+        v-if="data.slug !== ''"
         :to="{
-          name: 'organization-orgSlug-position-positionSlug-benchmark-benchmarkSlug',
-          params: { benchmarkSlug: data.slug },
+          name: 'organization-orgSlug-position-positionSlug-benchmarkSlug-valueSlug',
+          params: {
+            orgSlug: parentOrganization,
+            positionSlug: parentPosition,
+            benchmarkSlug: parentBenchmark.toLocaleLowerCase(),
+            valueSlug: props.data.slug,
+          },
         }"
-        class="px-3 py-2 text-md rounded-lg"
+        class="block px-3 py-2 min-h-20 text-md rounded-lg"
+        :class="[computedClass]"
       >
         {{ data.title }}
       </NuxtLink>

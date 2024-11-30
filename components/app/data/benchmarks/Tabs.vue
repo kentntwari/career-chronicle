@@ -1,18 +1,17 @@
 <script setup lang="ts">
-  import { TabsIndicator, TabsList, TabsRoot, TabsTrigger } from "radix-vue";
+  import type { Benchmark } from "~/types";
+  import { TabsList, TabsRoot, TabsTrigger } from "radix-vue";
 
   import * as benchmarks from "~/constants/benchmarks";
   import { resolveProvidedKeys } from "~/utils/keys";
 
   const props = defineProps<{
-    default?: Benchmark;
+    default: Benchmark;
   }>();
 
-  type Benchmark = (typeof benchmarks)[keyof typeof benchmarks];
+  const route = useRoute();
 
-  const currentBenchmark = ref<(typeof benchmarks)[keyof typeof benchmarks]>(
-    props.default ?? benchmarks.ACHIEVEMENTS
-  );
+  const currentBenchmark = ref<Benchmark>(props.default);
 
   const textColor = inject<string>(resolveProvidedKeys().benchmark.textColor);
   const bgColor = inject<string>(resolveProvidedKeys().benchmark.bgColor);
@@ -23,8 +22,13 @@
     class="px-1 h-10 flex items-center bg-[#fff] rounded-lg border border-neutral-grey-600"
     v-model:model-value="currentBenchmark"
     @update:model-value="
-      (payload) =>
-        navigateTo({
+      async (payload) =>
+        await navigateTo({
+          name: 'organization-orgSlug-position-positionSlug',
+          params: {
+            orgSlug: route.params.orgSlug,
+            positionSlug: route.params.positionSlug,
+          },
           query: {
             benchmark: payload.toLocaleLowerCase(),
           },

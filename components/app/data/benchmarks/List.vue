@@ -20,7 +20,7 @@
 </script>
 
 <template>
-  <menu class="fixed bottom-10 left-4 flex flex-col gap-1.5">
+  <menu class="flex gap-1.5">
     <li
       v-for="b in benchmarks"
       role="menuitem"
@@ -32,6 +32,11 @@
         :class="[props.default === b ? `${bgColor} ${textColor}` : '']"
         @click="
           navigateTo({
+            name: 'organization-orgSlug-position-positionSlug',
+            params: {
+              orgSlug: $route.params.orgSlug,
+              positionSlug: $route.params.positionSlug,
+            },
             query: {
               benchmark: b.toLocaleLowerCase(),
             },
