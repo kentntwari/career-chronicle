@@ -91,9 +91,18 @@ export function resolvePosProject(
 
 export function resolveProvidedKeys() {
   return {
+    organizations: {
+      all: "provided:orgs:all",
+      current: "provided:orgs:current",
+    },
+    positions: {
+      all: "provided:positions:all",
+      current: "provided:positions:current",
+    },
     benchmark: {
-      textColor: "provided:benchmark:text-color",
-      bgColor: "provided:benchmark:bg-color",
+      parentOrganization: "provided:benchmark:parent:org",
+      parentPosition: "provided:benchmark:parent:position",
+      kind: "provided:benchmark:parent:kind",
     },
     form: {
       benchmark: "provided:form:benchmark",
