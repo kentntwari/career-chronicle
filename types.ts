@@ -51,3 +51,7 @@ export interface ButtonVariants {
 }
 
 export type Benchmark = (typeof benchmarks)[keyof typeof benchmarks];
+export type BenchmarkPayload =
+  | Omit<Achievement | Failure, "id" | "positionId">
+  | Omit<Project, "id" | "positionId">
+  | Omit<Challenge, "id" | "positionId">;
