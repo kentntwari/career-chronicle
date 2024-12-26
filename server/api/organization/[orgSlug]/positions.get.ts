@@ -44,7 +44,10 @@ export default defineEventHandler(async (event) => {
       }
 
       default:
-        const dbOrg = await db.loadOrgPositions(organization);
+        const dbOrg = await db.loadOrgPositions(
+          { id: user.id, email: user.email },
+          organization
+        );
         if (!dbOrg) return [];
         cacheOrgPositions(user.email, organization, dbOrg.positions);
         if (!parsedQuery.success) return dbOrg.positions;

@@ -1,4 +1,3 @@
-import { H3Error } from "h3";
 import type { UserType } from "@kinde-oss/kinde-typescript-sdk";
 import type { Plan } from "@prisma/client";
 import * as authorize from "@/server/utils/authorize";

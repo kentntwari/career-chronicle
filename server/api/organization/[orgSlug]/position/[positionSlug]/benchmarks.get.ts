@@ -51,6 +51,7 @@ export default defineEventHandler(async (event) => {
 
       default:
         const dbBenchmarks = await loadPositionBenchmarks(
+          { id: user.id, email: user.email },
           organization,
           position,
           parsedQuery.data

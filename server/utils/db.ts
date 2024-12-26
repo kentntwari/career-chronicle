@@ -12,7 +12,6 @@ import {
   queriedBenchmark,
   incomingNewProjectBody,
 } from "~/utils/zschemas";
-import { log } from "console";
 
 type UserCredentials = z.infer<typeof userCredentials>;
 
@@ -30,28 +29,10 @@ function findExistingUser(user: UserCredentials) {
   });
 }
 
-function loadFreeUserOrgs(user: UserCredentials) {
-  return prisma.organization.findMany({
-    where: {
-      userId: user.id,
-    },
-    select: {
-      name: true,
-      slug: true,
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    take: 5,
-  });
-}
-
 export async function checkExistingDbUser(user: UserCredentials) {
   try {
     const dbUser = await findExistingUser(user);
-
     if (!dbUser) return false;
-
     return true;
   } catch (error) {
     logAndThrow(error);
@@ -60,7 +41,7 @@ export async function checkExistingDbUser(user: UserCredentials) {
 
 export async function findUserPlan(user: UserCredentials) {
   try {
-    return await prisma.user.findUnique({
+    return prisma.user.findUnique({
       where: {
         id: user.id,
         email: user.email,
@@ -90,9 +71,8 @@ export async function createFreePlan(
     if (!currentFreePlan) throw new Error("No free plan found");
 
     const currentUser = await findExistingUser(user);
-
     if (!currentUser)
-      return await prisma.plan.update({
+      return prisma.plan.update({
         where: {
           id: currentFreePlan.id,
         },
@@ -108,7 +88,7 @@ export async function createFreePlan(
         },
       });
 
-    return await prisma.plan.update({
+    return prisma.plan.update({
       where: {
         id: currentFreePlan.id,
       },
@@ -127,7 +107,7 @@ export async function createFreePlan(
 
 export async function loadPlanLimits(plan: Tier) {
   try {
-    return await prisma.plan.findFirst({
+    return prisma.plan.findFirst({
       where: {
         tier: plan,
       },
@@ -148,19 +128,24 @@ export async function loadPlanLimits(plan: Tier) {
 export async function loadUserOrgs(user: UserCredentials) {
   try {
     const currentUser = await findExistingUser(user);
-
     if (!currentUser) return undefined;
-
     if (!currentUser.plan) throw new Error("User plan not found");
 
-    switch (currentUser.plan.tier) {
-      case "FREE":
-        return await loadFreeUserOrgs(user);
+    const planLimits = await loadPlanLimits(currentUser.plan.tier);
 
-      default:
-        // FIX: Implement catered results for PRO users
-        return await loadFreeUserOrgs(user);
-    }
+    return prisma.organization.findMany({
+      where: {
+        userId: user.id,
+      },
+      select: {
+        name: true,
+        slug: true,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+      take: planLimits?.maxOrganizations,
+    });
   } catch (error) {
     logAndThrow(error);
   }
@@ -210,7 +195,7 @@ export async function loadPosition(parentOrg: string, currentPosition: string) {
 
     if (!parentOrganization) throw new Error("Organization not found");
 
-    const position = await prisma.position.findFirst({
+    return prisma.position.findFirst({
       where: {
         slug: currentPosition,
         organizationId: parentOrganization.id,
@@ -223,8 +208,6 @@ export async function loadPosition(parentOrg: string, currentPosition: string) {
         yearStartedAt: true,
       },
     });
-
-    return position;
   } catch (error) {
     logAndThrow(error);
   }
@@ -343,11 +326,18 @@ export async function createOrgPosition(
 }
 
 export async function loadOrgPositions(
+  user: UserCredentials,
   orgSlug: string,
   { month, year }: { month?: Month; year?: number | string } = {}
 ) {
   try {
-    return await prisma.organization.findUnique({
+    const currentUser = await findExistingUser(user);
+    if (!currentUser) return undefined;
+    if (!currentUser.plan) throw new Error("User plan not found");
+
+    const planLimits = await loadPlanLimits(currentUser.plan.tier);
+
+    return prisma.organization.findUnique({
       where: {
         slug: orgSlug.toLocaleLowerCase(),
       },
@@ -359,6 +349,7 @@ export async function loadOrgPositions(
             monthStartedAt: true,
             yearStartedAt: true,
           },
+          take: planLimits?.maxPositions,
         },
       },
     });
@@ -369,7 +360,7 @@ export async function loadOrgPositions(
 
 export async function loadOrgStates(orgSlug: string) {
   try {
-    return await prisma.organization.findUnique({
+    return prisma.organization.findUnique({
       where: {
         slug: orgSlug.toLocaleLowerCase(),
       },
@@ -405,14 +396,20 @@ function findExistingPosition(parentOrgSlug: string, positionSlug: string) {
 }
 
 export async function loadPositionBenchmarks(
+  user: UserCredentials,
   parentOrgSlug: string,
   positionSlug: string,
   benchmark: z.infer<typeof queriedBenchmark>
 ) {
   try {
-    const position = await findExistingPosition(parentOrgSlug, positionSlug);
+    const currentUser = await findExistingUser(user);
+    if (!currentUser) return undefined;
+    if (!currentUser.plan) throw new Error("User plan not found");
 
+    const position = await findExistingPosition(parentOrgSlug, positionSlug);
     if (!position) throw new Error("Position not found");
+
+    const planLimits = await loadPlanLimits(currentUser.plan.tier);
 
     const defaults = {
       where: {
@@ -428,43 +425,47 @@ export async function loadPositionBenchmarks(
 
     switch (benchmark) {
       case benchmarks.ACHIEVEMENTS:
-        return await prisma.achievement.findMany({
+        return prisma.achievement.findMany({
           ...defaults,
           select: {
             ...defaults.select,
             monthOccuredAt: true,
             yearOccuredAt: true,
           },
+          take: planLimits?.maxAchievements,
         });
 
       case benchmarks.FAILURES:
-        return await prisma.failure.findMany({
+        return prisma.failure.findMany({
           ...defaults,
           select: {
             ...defaults.select,
             monthOccuredAt: true,
             yearOccuredAt: true,
           },
+          take: planLimits?.maxFailures,
         });
 
       case benchmarks.PROJECTS:
-        return await prisma.project.findMany({
+        return prisma.project.findMany({
           ...defaults,
           select: {
             ...defaults.select,
             monthStartedAt: true,
             yearStartedAt: true,
           },
+          take: planLimits?.maxProjects,
         });
 
       case benchmarks.CHALLENGES:
-        return await prisma.challenge.findMany({
+        return prisma.challenge.findMany({
           ...defaults,
           select: {
             ...defaults.select,
             monthOccuredAt: true,
             yearOccuredAt: true,
           },
+          take: planLimits?.maxChallenges,
         });
 
       default:
@@ -491,7 +492,7 @@ export async function loadBenchmark(
 
     switch (benchmark) {
       case benchmarks.ACHIEVEMENTS:
-        return await prisma.achievement.findUniqueOrThrow({
+        return prisma.achievement.findUniqueOrThrow({
           where: {
             slug: payload.toLocaleLowerCase(),
           },
@@ -507,7 +508,7 @@ export async function loadBenchmark(
         });
 
       case benchmarks.FAILURES:
-        return await prisma.failure.findUniqueOrThrow({
+        return prisma.failure.findUniqueOrThrow({
           where: {
             slug: payload.toLocaleLowerCase(),
           },
@@ -523,7 +524,7 @@ export async function loadBenchmark(
         });
 
       case benchmarks.PROJECTS:
-        return await prisma.project.findUniqueOrThrow({
+        return prisma.project.findUniqueOrThrow({
           where: {
             slug: payload.toLocaleLowerCase(),
           },
@@ -543,7 +544,7 @@ export async function loadBenchmark(
         });
 
       case benchmarks.CHALLENGES:
-        return await prisma.challenge.findUniqueOrThrow({
+        return prisma.challenge.findUniqueOrThrow({
           where: {
             slug: payload.toLocaleLowerCase(),
           },
