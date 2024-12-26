@@ -25,7 +25,7 @@
     v-bind="$attrs"
     :class="
       cn(
-        'flex h-10 w-full rounded-md border border-neutral-grey-700 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 outline-none',
+        'flex h-10 w-full text-neutral-grey-1300 rounded-md border border-neutral-grey-700 px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 outline-none',
         props.class
       )
     "

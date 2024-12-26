@@ -4,6 +4,10 @@
   import { cn } from "~/lib/cn";
   import * as b from "@/utils/button";
 
+  defineOptions({
+    inheritAttrs: false,
+  });
+
   interface Props extends ButtonVariants {
     as?: string;
   }
@@ -19,6 +23,7 @@
     :is="as"
     :class="cn(b.variants({ variant, size }), $attrs.class ?? '')"
     :type="$attrs.type ?? 'button'"
+    v-bind="$attrs"
   >
     <slot></slot>
   </component>

@@ -24,7 +24,7 @@
     v-model="modelValue"
     :class="
       cn(
-        'flex min-h-20 w-full rounded-md border border-neutral-grey-700 px-3 py-2 text-sm outline-none',
+        'flex min-h-20 w-full text-neutral-grey-1300 rounded-md border border-neutral-grey-700 px-3 py-2 text-sm outline-none',
         props.class
       )
     "

@@ -35,7 +35,7 @@
       <popover-content
         :class="
           cn(
-            'rounded-lg p-3 max-w-[240px] bg-[#fff] text-neutral-grey-1000 will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade',
+            'rounded-lg p-3 max-w-[240px] bg-[#fff] text-neutral-grey-1000 drop-shadow-[0_4px_10px_rgb(0,0,0,0.2)] will-change-[transform,opacity] data-[state=open]:data-[side=top]:animate-slideDownAndFade data-[state=open]:data-[side=right]:animate-slideLeftAndFade data-[state=open]:data-[side=bottom]:animate-slideUpAndFade data-[state=open]:data-[side=left]:animate-slideRightAndFade',
             props.class
           )
         "

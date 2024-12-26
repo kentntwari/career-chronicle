@@ -74,7 +74,7 @@
                 :value="item"
                 :class="
                   cn(
-                    'text-xs text-neutral-grey-900 leading-none flex items-center h-8 relative select-none data-[disabled]:text-neutral-grey-700 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-success-400 data-[highlighted]:text-neutral-grey-1100',
+                    'text-xs text-neutral-grey-1300 leading-none flex items-center h-8 relative select-none data-[disabled]:text-neutral-grey-700 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-success-400 data-[highlighted]:text-neutral-grey-1100',
                     props.classes?.item ?? ''
                   )
                 "
