@@ -10,8 +10,9 @@
     Info as LucideInfoIcon,
   } from "lucide-vue-next";
 
-  defineProps<{
-    position: string;
+  const props = defineProps<{
+    data: OrgPos;
+    current: string;
     startedAt?: string;
     description?: string;
   }>();
@@ -22,38 +23,12 @@
 
   const route = useRoute();
 
-  const k = useOrgPositionsKey();
-  const { data: cachedOrgPositions } = useNuxtData<OrgPos>(k.value);
-
-  const orgPositions = useState<OrgPos>("positions", () => []);
-  const selectItems = computed(() =>
-    orgPositions.value.map(({ title }) => title)
-  );
-
-  const nuxtApp = useNuxtApp();
-
-  watch(
-    () => cachedOrgPositions.value,
-    async (cached) => {
-      if (cached) orgPositions.value = cached;
-      else {
-        orgPositions.value = await useRequestFetch()<OrgPos>(
-          "/api/organization/" +
-            stringifyRoute(route.params.orgSlug) +
-            "/positions"
-        );
-        nuxtApp.payload.data[k.value] = orgPositions.value;
-      }
-    },
-    {
-      immediate: true,
-    }
-  );
+  const selectItems = computed(() => props.data.map(({ title }) => title));
 
   // TODO:Eventually, create a composable to handle browser history change
   // TODO: ensure that no title is duplicatd
   function handleChange(value: OrgPos[number]["title"]) {
-    const selected = orgPositions.value.find((pos) => pos.title === value);
+    const selected = props.data.find((pos) => pos.title === value);
     if (!selected) return;
     emit("selected", selected.slug);
   }
@@ -82,7 +57,7 @@
         </figure>
 
         <ui-select
-          :default="position"
+          :default="current"
           :items="selectItems"
           :placeholder="'Select a position'"
           @update:selected="(pos) => handleChange(pos)"
@@ -112,9 +87,7 @@
               class="block text-sm"
               :class="[!description ? 'italic text-neutral-grey-900' : '']"
             >
-              {{
-                !!description ? `${description}` : "No description provided"
-              }}
+              {{ !!description ? `${description}` : "No description provided" }}
             </small>
           </template>
         </ui-popover>

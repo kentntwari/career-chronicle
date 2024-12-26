@@ -1,8 +1,13 @@
 <script lang="ts" setup>
   import type { Plan } from "@prisma/client";
   import type { Benchmark } from "~/types";
+  import { cn } from "~/lib/cn";
 
   import * as benchmarks from "~/constants/benchmarks";
+
+  defineOptions({
+    inheritAttrs: false,
+  });
 
   interface Props {
     currentCount: string | number;
@@ -39,7 +44,7 @@
 
 <template>
   <header
-    class="banner"
+    :class="cn('banner', $attrs.class ?? '')"
     role="banner"
     :aria-label="`start of available ${target.toLocaleLowerCase()} limits`"
   >

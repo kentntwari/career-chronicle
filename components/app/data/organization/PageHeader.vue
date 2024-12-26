@@ -7,38 +7,20 @@
     ChevronRight as LucideChevronRightIcon,
   } from "lucide-vue-next";
 
-  defineProps<{
-    organization: string;
+  const props = defineProps<{
+    current: string;
+    data: Orgs;
   }>();
 
   const emit = defineEmits<{
     selected: [org: Orgs[number]["slug"]];
   }>();
 
-  const { data: cachedOrgs } = useNuxtData<Orgs>("orgs");
-
-  const userOrgs = useState<Orgs>("orgs", () => []);
-  const selectItems = computed(() => userOrgs.value.map(({ name }) => name));
-
-  const nuxtApp = useNuxtApp();
-
-  watch(
-    () => cachedOrgs.value,
-    async (val) => {
-      if (val) userOrgs.value = val;
-      else {
-        userOrgs.value = await useRequestFetch()<Orgs>("/api/organizations");
-        nuxtApp.payload.data.orgs = userOrgs.value;
-      }
-    },
-    {
-      immediate: true,
-    }
-  );
+  const selectItems = computed(() => props.data.map(({ name }) => name));
 
   // TODO:Eventually, create a composable to handle browser history change
   function handleChange(value: Orgs[number]["name"]) {
-    const selected = userOrgs.value.find((org) => org.name === value);
+    const selected = props.data.find((org) => org.name === value);
     if (!selected) return;
     emit("selected", selected.slug);
   }
@@ -64,7 +46,7 @@
           />
         </figure>
         <ui-select
-          :default="organization"
+          :default="current"
           :items="selectItems"
           :placeholder="'Select an organization'"
           @update:selected="(org) => handleChange(org)"
