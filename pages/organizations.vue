@@ -101,7 +101,7 @@
       <template v-else>
         <app-skeleton-content v-show="isLoading === 'pending'" />
 
-        <section class="space-y-6">
+        <section class="space-y-6" v-show="isLoading !== 'pending'">
           <app-data-plan-banner
             :target="'ORGANIZATIONS'"
             :current-count="organizations?.length ?? '??'"
