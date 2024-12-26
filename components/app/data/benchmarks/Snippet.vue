@@ -1,39 +1,39 @@
 <script lang="ts" setup>
-  import type { Benchmark } from "~/types";
+  import type { Benchmark, SingleOrg, SinglePos } from "~/types";
 
   import * as benchmarks from "~/constants/benchmarks";
-  import { resolveProvidedKeys } from "~/utils/keys";
-
-  const parentOrganization = inject<string>(
-    resolveProvidedKeys().benchmark.parentOrganization
-  )!;
-  const parentPosition = inject<Benchmark>(
-    resolveProvidedKeys().benchmark.parentPosition
-  )!;
-  const parentBenchmark = inject<Benchmark>(
-    resolveProvidedKeys().benchmark.kind
-  )!;
+  import { CURRENT_BENCHMARK } from "~/constants/routeNames";
 
   const props = defineProps<{
     data: {
       title: string;
       slug: string;
     };
+    parentOrganization: SingleOrg["slug"];
+    parentPosition: SinglePos["slug"];
+    parentBenchmark: Benchmark;
   }>();
 
   const computedClass = computed<string>(() => {
     switch (true) {
-      case parentBenchmark.toLocaleLowerCase() ===
+      case props.parentBenchmark.toLocaleLowerCase() ===
         benchmarks.CHALLENGES.toLocaleLowerCase():
         return "bg-neutral-grey-300 text-neutral-grey-1100 shadow-[0_5px_13px_rgba(163,163,163,1)]";
 
-      case parentBenchmark.toLocaleLowerCase() ===
+      case props.parentBenchmark.toLocaleLowerCase() ===
         benchmarks.ACHIEVEMENTS.toLocaleLowerCase():
         return "bg-success-100/50 text-success-900 shadow-[0_5px_13px_rgba(25,184,74,1)]";
 
       default:
         return "";
     }
+  });
+
+  const computedSingularBenchmarkName = computed(() => {
+    if (props.parentBenchmark === benchmarks.ACHIEVEMENTS) return "achievement";
+    if (props.parentBenchmark === benchmarks.PROJECTS) return "project";
+    if (props.parentBenchmark === benchmarks.FAILURES) return "failure";
+    if (props.parentBenchmark === benchmarks.CHALLENGES) return "challenge";
   });
 </script>
 
@@ -43,12 +43,14 @@
       <NuxtLink
         v-if="data.slug !== ''"
         :to="{
-          name: 'organization-orgSlug-position-positionSlug-benchmarkSlug-valueSlug',
+          name: CURRENT_BENCHMARK,
           params: {
             orgSlug: parentOrganization,
             positionSlug: parentPosition,
-            benchmarkSlug: parentBenchmark.toLocaleLowerCase(),
-            valueSlug: props.data.slug,
+            benchmark: parentBenchmark.toLocaleLowerCase(),
+          },
+          query: {
+            v: props.data.slug,
           },
         }"
         class="block px-3 py-2 min-h-20 text-md rounded-lg"
@@ -67,19 +69,19 @@
           class="group text-xs leading-none text-neutral-grey-1000 rounded-[3px] flex items-center h-[25px] px-[5px] relative pl-4 select-none outline-none data-[disabled]:text-neutral-grey-600 data-[disabled]:pointer-events-none data-[highlighted]:bg-neutral-grey-300 data-[highlighted]:text-neutral-grey-1300"
           @select="openNewTab(`/organization/${data.slug}`)"
         >
-          Open new tab
+          Open in new tab
         </context-menu-item>
         <context-menu-item
           value="Change name"
           class="group text-xs leading-none text-neutral-grey-1000 rounded-[3px] flex items-center h-[25px] px-[5px] relative pl-4 select-none outline-none data-[disabled]:text-neutral-grey-600 data-[disabled]:pointer-events-none data-[highlighted]:bg-neutral-grey-300 data-[highlighted]:text-neutral-grey-1300"
         >
-          Change name
+          Edit {{ computedSingularBenchmarkName }}
         </context-menu-item>
         <context-menu-item
           value="Delete Organization"
           class="group text-xs leading-none text-danger-700 rounded-[3px] flex items-center h-[25px] px-[5px] relative pl-4 select-none outline-none data-[disabled]:text-neutral-grey-600 data-[disabled]:pointer-events-none data-[highlighted]:bg-neutral-grey-300 data-[highlighted]:text-neutral-grey-1300"
         >
-          Delete organization
+          Delete {{ computedSingularBenchmarkName }}
         </context-menu-item>
       </context-menu-content>
     </context-menu-portal>
