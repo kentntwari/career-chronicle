@@ -1,4 +1,5 @@
 import { Month, Prisma, Tier } from "@prisma/client";
+import { Benchmark, BenchmarkPayload } from "~/types";
 
 import { z } from "zod";
 
@@ -11,6 +12,7 @@ import {
   queriedBenchmark,
   incomingNewProjectBody,
 } from "~/utils/zschemas";
+import { log } from "console";
 
 type UserCredentials = z.infer<typeof userCredentials>;
 
@@ -467,6 +469,102 @@ export async function loadPositionBenchmarks(
 
       default:
         throw new Error("Unrecognized benchmarj");
+    }
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function loadBenchmark(
+  parentOrgSlug: string,
+  parentPositionSlug: string,
+  benchmark: Benchmark,
+  payload: string
+): Promise<BenchmarkPayload | undefined> {
+  try {
+    const position = await findExistingPosition(
+      parentOrgSlug,
+      parentPositionSlug
+    );
+
+    if (!position) throw new Error("Position not found");
+
+    switch (benchmark) {
+      case benchmarks.ACHIEVEMENTS:
+        return await prisma.achievement.findUniqueOrThrow({
+          where: {
+            slug: payload.toLocaleLowerCase(),
+          },
+          select: {
+            title: true,
+            slug: true,
+            description: true,
+            monthOccuredAt: true,
+            yearOccuredAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+      case benchmarks.FAILURES:
+        return await prisma.failure.findUniqueOrThrow({
+          where: {
+            slug: payload.toLocaleLowerCase(),
+          },
+          select: {
+            title: true,
+            slug: true,
+            description: true,
+            monthOccuredAt: true,
+            yearOccuredAt: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+      case benchmarks.PROJECTS:
+        return await prisma.project.findUniqueOrThrow({
+          where: {
+            slug: payload.toLocaleLowerCase(),
+          },
+          select: {
+            title: true,
+            slug: true,
+            description: true,
+            monthStartedAt: true,
+            yearStartedAt: true,
+            monthFinishedAt: true,
+            yearFinishedAt: true,
+            isAchievement: true,
+            isFailure: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+      case benchmarks.CHALLENGES:
+        return await prisma.challenge.findUniqueOrThrow({
+          where: {
+            slug: payload.toLocaleLowerCase(),
+          },
+          select: {
+            title: true,
+            slug: true,
+            description: true,
+            monthOccuredAt: true,
+            yearOccuredAt: true,
+            monthSolvedAt: true,
+            yearSolvedAt: true,
+            isAchievement: true,
+            isFailure: true,
+            isProject: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        });
+
+      default:
+        throw new Error("Unrecognized benchmark");
     }
   } catch (error) {
     logAndThrow(error);
