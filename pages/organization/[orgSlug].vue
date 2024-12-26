@@ -1,134 +1,148 @@
 <script lang="ts" setup>
-  import type { UseFetchOptions } from "nuxt/app";
-  import type { FetchResponse } from "ofetch";
-  import type { SingleOrg } from "~/types";
+  import type { OrgPos, Orgs } from "~/types";
+
+  import { CURRENT_ORGANIZATION } from "~/constants/routeNames";
+  import { useCurrentOrganization } from "~/composables/useCurrentOrganization";
 
   definePageMeta({
     middleware: ["protected"],
     layout: false,
   });
 
+  const nuxtApp = useNuxtApp();
+
   const route = useRoute();
 
-  const isOrganizationPath = useMatchOrganizationPath();
+  const cachedOrgs = useNuxtData<Orgs>("orgs");
+  const allOrgs = computed<Orgs>(() => cachedOrgs.data.value ?? []);
 
-  const { $isFetchPositions, $fetchPositions, $abortFetchPositions } =
-    useNuxtApp();
-
-  const k = useOrganizationKey();
-  const OPTIONS: UseFetchOptions<SingleOrg> = {
-    key: k.value,
-    baseURL: "/api/organization",
-    onRequest: () => {
-      if ($isFetchPositions.value) $abortFetchPositions();
-    },
-    onResponse: ({ response }: { response: FetchResponse<SingleOrg> }) => {
-      if (response._data?.hasCreatedPositionBefore && isOrganizationPath.value)
-        $fetchPositions();
-
-      if (!isOrganizationPath.value && $isFetchPositions.value)
-        $abortFetchPositions();
-    },
-    getCachedData(key, nuxtApp) {
-      if (!nuxtApp.payload.data[key]) return;
-      return nuxtApp.payload.data[key];
-    },
-  } as const;
+  await callOnce(async () => {
+    if (!cachedOrgs.data.value) {
+      cachedOrgs.data.value =
+        await useRequestFetch()<Orgs>("/api/organizations");
+    }
+  });
 
   const {
-    data: organization,
-    status,
-    error: errorFetchingOrganization,
-  } = await useLazyFetch<SingleOrg>(`/${route.params.orgSlug}`, {
-    ...OPTIONS,
-  });
+    organization: computedOrganization,
+    updateOrgBenchmarkState,
+    updateOrgPositionState,
+  } = useCurrentOrganization();
+
+  const pk = useOrgPositionsKey();
+  const { data, status, error, execute } = await useLazyAsyncData<OrgPos>(
+    pk.value,
+    () =>
+      useRequestFetch()<OrgPos>(`${route.params.orgSlug}/positions`, {
+        baseURL: "/api/organization",
+      }),
+    {
+      immediate: false,
+      deep: false,
+      default: () => [],
+    }
+  );
+
+  watch(
+    () => computedOrganization.value,
+    (d) => {
+      if (nuxtApp.payload.data[pk.value])
+        data.value = nuxtApp.payload.data[pk.value];
+      else if (d.hasCreatedPositionBefore && d.name !== "") execute();
+    },
+    {
+      immediate: true,
+    }
+  );
 
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
 
-  function updateOrgPositionState() {
-    if (!organization.value) return;
-    organization.value.hasCreatedPositionBefore = true;
-  }
+  provide(resolveProvidedKeys().organizations.current, {
+    organization: computedOrganization,
+    updateOrgBenchmarkState,
+  });
+  provide(resolveProvidedKeys().positions.all, readonly(data));
 </script>
 
 <template>
-  <ClientOnly>
+  <client-only>
     <template #fallback>
-      <app-skeleton-organization />
+      <app-skeleton-pageHeader target="ORGANIZATION" />
     </template>
-
     <app-data-organization-pageHeader
-      :organization="organization?.name ?? ''"
+      :current="computedOrganization.name"
+      :data="allOrgs"
       @selected="
         async (o) =>
           await navigateTo({
-            name: 'organization-orgSlug',
+            name: CURRENT_ORGANIZATION,
             params: { orgSlug: o },
           })
       "
     />
+  </client-only>
 
-    <div v-show="isLoading === 'pending'">
-      <app-skeleton-positions />
+  <div
+    v-if="
+      (status === 'pending' || isLoading === 'pending') &&
+      route.name === CURRENT_ORGANIZATION
+    "
+  >
+    <app-skeleton-positions />
+  </div>
+
+  <!-- TODO: Better UI for errors -->
+  <div v-else-if="isLoading === 'error'">
+    <small>{{ error }}</small>
+  </div>
+
+  <!-- TODO:Handle the case when the data is null but not necessarily an error -->
+  <!-- HERE -->
+  <div v-else-if="!computedOrganization">could not find organization</div>
+
+  <div
+    class="flex-1 flex flex-col"
+    v-else-if="computedOrganization.hasCreatedPositionBefore === false"
+  >
+    <div class="mt-[4.5rem] max-w-[366px] text-balance font-medium">
+      <p>
+        It seems you haven’t registered any checkpoint in your journey at this
+        organization.
+      </p>
+      <br />
+      <p>
+        Everyone gotta start somewhere. Just type in where you’re at the moment
+        with this organization.
+      </p>
+      <ui-dialog>
+        <template #trigger="{ open: createPosition }">
+          <app-create-position-btn @create="createPosition()" class="mt-10">
+            Get Started
+          </app-create-position-btn>
+        </template>
+        <template #default="{ close }">
+          <visually-hidden>
+            <dialog-title></dialog-title>
+          </visually-hidden>
+          <visually-hidden>
+            <dialog-description></dialog-description>
+          </visually-hidden>
+          <app-form-position
+            :parent-organization="stringifyRoute(route.params.orgSlug)"
+            @cancel="close()"
+            @form-submitted="
+              () => {
+                updateOrgPositionState();
+                close();
+              }
+            "
+          />
+        </template>
+      </ui-dialog>
     </div>
+  </div>
 
-    <!-- TODO:Handle the case when the data is null but not necessarily an error -->
-    <!-- HERE -->
-
-    <!-- TODO: Better UI for errors -->
-    <div v-if="errorFetchingOrganization">
-      <small>{{ errorFetchingOrganization }}</small>
-    </div>
-
-    <div
-      :class="[
-        isLoading === 'pending' ? 'invisible' : 'visible flex-1 flex flex-col',
-      ]"
-      v-else
-    >
-      <small v-if="!organization">Could not find organization</small>
-      <div
-        class="mt-[4.5rem] max-w-[366px] text-balance font-medium"
-        v-else-if="organization.hasCreatedPositionBefore ? false : true"
-      >
-        <p>
-          It seems you haven’t registered any checkpoint in your journey at this
-          organization.
-        </p>
-        <br />
-        <p>
-          Everyone gotta start somewhere. Just type in where you’re at the
-          moment with this organization.
-        </p>
-        <ui-dialog>
-          <template #trigger="{ open: createPosition }">
-            <app-create-position-btn @create="createPosition()" class="mt-10">
-              Get Started
-            </app-create-position-btn>
-          </template>
-          <template #default="{ close }">
-            <visually-hidden>
-              <dialog-title></dialog-title>
-            </visually-hidden>
-            <visually-hidden>
-              <dialog-description></dialog-description>
-            </visually-hidden>
-            <app-form-position
-              :parent-organization="
-                organization.slug ?? stringifyRoute(route.params.orgSlug)
-              "
-              @cancel="close()"
-              @form-submitted="
-                () => {
-                  updateOrgPositionState();
-                  close();
-                }
-              "
-            />
-          </template>
-        </ui-dialog>
-      </div>
-      <NuxtPage v-else />
-    </div>
-  </ClientOnly>
+  <div class="flex-1 flex flex-col" v-else>
+    <NuxtPage />
+  </div>
 </template>
