@@ -1,70 +1,61 @@
 <script lang="ts" setup>
-  import type { UseFetchOptions } from "nuxt/app";
-  import type { SingleOrg, SinglePos, Benchmark } from "~/types";
+  import type { SingleOrg, OrgPos, Benchmark } from "~/types";
 
   import {
     Calendar as LucideCalendarIcon,
     Puzzle as LucidePuzzleIcon,
+    Plus as LucidePlusIcon,
+    SlidersHorizontal as lucideSliderHorizontalIcon,
     TrendingUp as LucideTrendingUpIcon,
     TrendingDown as LucideTrendingDownIcon,
   } from "lucide-vue-next";
 
   import * as benchmarks from "~/constants/benchmarks";
+  import * as routeNames from "~/constants/routeNames";
+  import { DEFAULT_ORGANIZATION_OBJ } from "~/constants/defaults";
 
   definePageMeta({
     middleware: ["protected"],
     layout: false,
   });
 
-  const route = useRoute();
-
-  const orgKey = useOrganizationKey();
-  const { data: organization } = useNuxtData<SingleOrg>(orgKey.value);
-
-  const k = useCurrentPositionKey();
-  const OPTIONS_POSITION: UseFetchOptions<SinglePos> = {
-    key: k.value,
-    baseURL: "/api/organization",
-    getCachedData: (key, nuxtApp) => {
-      if (!nuxtApp.payload.data[key]) return;
-      return nuxtApp.payload.data[key];
-    },
-  } as const;
-
-  const {
-    data: position,
-    status,
-    error,
-  } = await useLazyFetch<SinglePos>(
-    `${route.params.orgSlug}/position/${route.params.positionSlug}`,
-    {
-      ...OPTIONS_POSITION,
-      default: () =>
-        ref<SinglePos>({
-          title: "",
-          slug: "",
-          description: "",
-          monthStartedAt: "JANUARY",
-          yearStartedAt: 1950,
-        }),
-    }
+  interface TransformedSingleOrg extends SingleOrg {
+    hasCreatedBenchmark: boolean;
+  }
+  interface ProvideOrganization {
+    organization: ComputedRef<TransformedSingleOrg>;
+    updateOrgBenchmarkState: (benchmark: Benchmark) => void;
+  }
+  const { organization, updateOrgBenchmarkState } = inject<ProvideOrganization>(
+    resolveProvidedKeys().organizations.current,
+    () => ({
+      organization: computed(() => ({ ...DEFAULT_ORGANIZATION_OBJ })),
+      updateOrgBenchmarkState: () => {},
+    }),
+    true
+  );
+  const positions = inject<OrgPos>(
+    resolveProvidedKeys().positions.all,
+    () => [],
+    true
   );
 
+  const route = useRoute();
+
+  const { data, status, error, execute } = await useCurrentPosition();
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
+
+  const {
+    activeBenchmark: currentBenchmark,
+    textClass: activeTextColorClass,
+    bgClass: activeBgColorClass,
+  } = useActiveBenchmark();
 
   const addBenchmark = ref(false);
 
-  const hasCreatedBenchmarks = computed(() => {
-    if (
-      organization.value?.hasCreatedAchievementBefore ||
-      organization.value?.hasCreatedChallengeBefore ||
-      organization.value?.hasCreatedFailureBefore ||
-      organization.value?.hasCreatedProjectBefore
-    )
-      return true;
-
-    return false;
-  });
+  const renderedComponent = computed(() =>
+    resolveComponent("LazyAppFormBenchmark")
+  );
 
   const color = (b: Benchmark) => {
     switch (true) {
@@ -80,85 +71,40 @@
         return "";
     }
   };
-
-  function createFirst(b: Benchmark) {
-    if (!organization.value) return;
-    if (b === benchmarks.PROJECTS)
-      organization.value.hasCreatedProjectBefore = true;
-    else if (b === benchmarks.ACHIEVEMENTS)
-      organization.value.hasCreatedAchievementBefore = true;
-    else if (b === benchmarks.CHALLENGES)
-      organization.value.hasCreatedChallengeBefore = true;
-    else if (b === benchmarks.FAILURES)
-      organization.value.hasCreatedFailureBefore = true;
-  }
-
-  const currentBenchmark = ref<Benchmark>();
-  watch(
-    [
-      () => route.name,
-      () => route.params.benchmarkSlug,
-      () => route.query.benchmark,
-    ],
-    ([route, param, query]) => {
-      switch (true) {
-        case route === "organization-orgSlug-position-positionSlug":
-          if (!query) currentBenchmark.value = benchmarks.ACHIEVEMENTS;
-          else if (typeof query === "string")
-            currentBenchmark.value = query as Benchmark;
-          break;
-
-        case route ===
-          "organization-orgSlug-position-positionSlug-benchmarkSlug-valueSlug":
-          currentBenchmark.value = stringifyRoute(param) as Benchmark;
-          break;
-
-        default:
-          currentBenchmark.value = benchmarks.ACHIEVEMENTS;
-          break;
-      }
-    },
-    {
-      immediate: true,
-    }
-  );
-
-  const renderedComponent = computed(() =>
-    resolveComponent("LazyAppFormBenchmark")
-  );
-
-  provide(resolveProvidedKeys().form.benchmark, renderedComponent);
 </script>
 
 <template>
-  <app-data-position-pageHeader
-    :position="position.title"
-    :started-at="`${position?.monthStartedAt?.toLocaleLowerCase() ?? ''} ${position?.yearStartedAt ?? ''}`"
-    :description="position?.description ?? ''"
-    class="border border-neutral-grey-600"
-    @selected="
-      async (position) =>
-        await navigateTo({
-          name: 'organization-orgSlug-position-positionSlug',
-          params: {
-            orgSlug: route.params.orgSlug,
-            positionSlug: position,
-          },
-        })
-    "
-  />
-  <div class="container" v-if="isLoading === 'pending'">
-    <app-skeleton-content class="mt-10 px-3" />
-  </div>
+  <client-only>
+    <template #fallback>
+      <app-skeleton-pageHeader target="POSITION" />
+    </template>
+    <app-data-position-pageHeader
+      :data="positions"
+      :current="data[0].title"
+      :started-at="`${data[0].monthStartedAt.toLocaleLowerCase()} ${data[0].yearStartedAt}`"
+      :description="data[0].description ?? ''"
+      class="border border-neutral-grey-600"
+      @selected="
+        async (position) => {
+          return await navigateTo({
+            name: routeNames.CURRENT_POSITION,
+            params: {
+              orgSlug: route.params.orgSlug,
+              positionSlug: position,
+            },
+          });
+        }
+      "
+    />
+  </client-only>
+
   <!-- TODO: Handle the case where data(positions) is null but not necessarily an error -->
   <!-- TODO: Better UI for errors -->
-  <div v-else-if="isLoading === 'error'">
-    <slot name="error" :error="error">
-      <small>{{ error }}</small>
-    </slot>
+  <div v-if="status === 'error'">
+    <small>{{ error }}</small>
   </div>
   <div
-    v-else-if="!hasCreatedBenchmarks"
+    v-else-if="!organization.hasCreatedBenchmark"
     class="mt-[4.5rem] px-3 container text-balance font-medium"
   >
     <p>
@@ -216,7 +162,7 @@
               @cancel="close()"
               @form-submitted="
                 () => {
-                  createFirst(b);
+                  updateOrgBenchmarkState(b);
                   close();
                 }
               "
@@ -227,25 +173,101 @@
     </section>
   </div>
   <div class="flex-1 flex flex-col" v-else>
-    <app-data-benchmarks
-      :key="route.fullPath"
-      :current-benchmark="currentBenchmark!"
-      :parent-organization="stringifyRoute(route.params.orgSlug)"
-      :parent-position="stringifyRoute(route.params.positionSlug)"
+    <nav
+      class="w-full px-3 mt-4 my-6 container flex justify-between items-center"
+      aria-label="benchmarks tabs"
     >
-      <template #default="{ data: fetchedBenchmarks }">
+      <client-only>
+        <template #fallback>
+          <app-skeleton-tabs />
+        </template>
+
+        <app-data-benchmarks-tabs
+          :default="currentBenchmark"
+          :active-class="`${activeBgColorClass} ${activeTextColorClass}`"
+          role="menu"
+          aria-label="desktop"
+        />
+      </client-only>
+
+      <menu class="flex items-center gap-1.5">
+        <li role="menuitem">
+          <ui-popover>
+            <template #trigger="{ open }">
+              <ui-button
+                variant="neutral"
+                class="text-neutral-grey-1000"
+                @click="open()"
+              >
+                <span class="lg:hidden">
+                  <lucide-slider-horizontal-icon />
+                </span>
+                <span class="uppercase hidden lg:block">Filter</span>
+              </ui-button>
+            </template>
+          </ui-popover>
+        </li>
+        <li role="menuitem">
+          <ui-popover :align="'end'" :side-offset="10" class="max-w-[90vw]">
+            <template #trigger="{ open }">
+              <ui-button @click="open()">
+                <span class="lg:hidden"><lucide-plus-icon /></span>
+                <span class="uppercase hidden lg:block">Add new</span>
+              </ui-button>
+            </template>
+            <template #content="{ close }">
+              <component
+                :is="renderedComponent"
+                :parent-organization="stringifyRoute(route.params.orgSlug)"
+                :parent-position="stringifyRoute(route.params.positionSlug)"
+                :benchmark="currentBenchmark"
+                @cancel="close()"
+                @form-submitted="close()"
+              />
+            </template>
+          </ui-popover>
+        </li>
+      </menu>
+    </nav>
+    <client-only>
+      <template #fallback>
+        <app-skeleton-banner />
+      </template>
+      <div class="container">
+        <app-data-plan-banner
+          :target="currentBenchmark"
+          :current-count="data[1].length"
+        />
+      </div>
+    </client-only>
+    <main
+      class="mt-12 pt-4 pb-5 w-full h-full bg-neutral-grey-500 flex-1 flex flex-col"
+    >
+      <div
+        class="container"
+        v-if="status === 'pending' || isLoading === 'pending'"
+      >
+        <app-skeleton-content class="px-3" />
+      </div>
+      <div class="container" v-else>
         <ul
-          class="container flex-1 flex flex-col gap-4"
-          v-if="route.name === 'organization-orgSlug-position-positionSlug'"
+          class="px-3 space-y-3"
+          v-show="route.name === routeNames.CURRENT_POSITION"
         >
-          <li v-for="benchmark in fetchedBenchmarks" :key="benchmark.slug">
+          <li v-for="benchmark in data[1]" :key="benchmark.slug">
             <app-data-benchmarks-snippet
               :data="{ title: benchmark.title, slug: benchmark.slug }"
+              :parent-organization="stringifyRoute(route.params.orgSlug)"
+              :parent-position="stringifyRoute(route.params.positionSlug)"
+              :parent-benchmark="currentBenchmark"
             />
           </li>
         </ul>
-        <NuxtPage v-else />
-      </template>
-    </app-data-benchmarks>
+
+        <section v-show="route.name === routeNames.CURRENT_BENCHMARK">
+          <NuxtPage :page-key="(route) => route.fullPath" :data="data[2]" />
+        </section>
+      </div>
+    </main>
   </div>
 </template>
