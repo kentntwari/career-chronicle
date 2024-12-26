@@ -13,7 +13,7 @@
 
   const emit = defineEmits<{
     cancel: [void];
-    formSubmitted: [void];
+    formSubmitted: [data: OrgPos[number]];
   }>();
 
   // TODO: Must handle hidden errors like missing slug
@@ -23,8 +23,6 @@
 
   const orgPosKey = useOrgPositionsKey();
   const { data: currentPositions } = useNuxtData<OrgPos>(orgPosKey.value);
-
-  const previousPositions = ref<OrgPos>([]);
 
   const [title, titleAtts] = defineField("title");
   const [month, monthAttrs] = defineField("timeline.month");
@@ -39,31 +37,22 @@
       description: values.description?.toLocaleLowerCase(),
     } satisfies z.infer<typeof incomingNewTimelineMarkerBody>;
 
-    emit("formSubmitted");
+    const newEntry = {
+      title: payload.title.toLocaleLowerCase(),
+      slug: generateSlug(payload.title.toLowerCase()),
+      monthStartedAt: payload.timeline.month as Month,
+      yearStartedAt: payload.timeline.year,
+    };
 
     $fetch("/api/organization/" + props.parentOrganization + "/position", {
       method: "POST",
       body: payload,
       onRequest() {
-        const altered = {
-          title: payload.title.toLocaleLowerCase(),
-          slug: generateSlug(payload.title.toLowerCase()),
-          monthStartedAt: payload.timeline.month as Month,
-          yearStartedAt: payload.timeline.year,
-        };
-        if (currentPositions.value !== null) {
-          previousPositions.value = currentPositions.value;
-          currentPositions.value.push(altered);
-        } else {
-          currentPositions.value = [];
-          currentPositions.value.push(altered);
-        }
+        if (currentPositions.value) currentPositions.value.push(newEntry);
+        emit("formSubmitted", newEntry);
       },
-      onRequestError() {
-        currentPositions.value = previousPositions.value; // Rollback the data if the request failed.
-      },
-      async onResponse() {
-        await refreshNuxtData(orgPosKey.value); // Invalidate orgs in the background if the request succeeded.
+      onResponse() {
+        refreshNuxtData(orgPosKey.value);
       },
     });
   });

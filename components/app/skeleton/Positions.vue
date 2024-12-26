@@ -4,7 +4,7 @@
 </script>
 
 <template>
-  <div :class="cn('px-3 py-10 container space-y-2', $attrs.class ?? '')">
+  <div class="px-3 py-10 container space-y-2">
     <div
       v-for="_el in 3"
       :key="nanoid"

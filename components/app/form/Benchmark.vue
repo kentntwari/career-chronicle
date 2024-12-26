@@ -50,7 +50,7 @@
         method: "POST",
         body: payload,
         query: {
-          kind: props.benchmark.toLocaleLowerCase(),
+          payload: props.benchmark.toLocaleLowerCase(),
         },
       }
     );
