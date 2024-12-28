@@ -8,6 +8,20 @@ export const userCredentials = z.object({
   email: z.string().email(),
 });
 
+export const deleteSchema = z.object({
+  slug: z.string(),
+  parentOrg: z
+    .object({
+      slug: z.string(),
+    })
+    .optional(),
+  parentPosition: z
+    .object({
+      slug: z.string(),
+    })
+    .optional(),
+});
+
 export const newOrg = z.object({
   name: z
     .string({

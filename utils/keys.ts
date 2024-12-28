@@ -8,8 +8,12 @@ export const DATA_STORE = "data";
 
 type UserEmail = z.infer<typeof userCredentials>["email"];
 
-export function resolveUser(email: UserEmail) {
+export function resolveFirstTimerUser(email: UserEmail) {
   return `user:${email.toLocaleLowerCase()}:first-time`;
+}
+
+export function resolveUserAccessToken(email: UserEmail) {
+  return `user:${email.toLocaleLowerCase()}:access-token`;
 }
 
 export function resolveUserOrgs(email: UserEmail) {
