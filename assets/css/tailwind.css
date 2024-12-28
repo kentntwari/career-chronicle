@@ -28,4 +28,8 @@
   .dialog-content {
     @apply fixed z-10 bottom-0 left-0 right-0 h-[340px] bg-[#fff] p-4 space-y-6;
   }
+
+  .dialog-delete {
+    @apply w-96 min-h-0 h-40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg;
+  }
 }
