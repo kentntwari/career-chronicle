@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+  import { CURRENT_POSITION } from "~/constants/routeNames";
   import { MapPin as LucideMapPinIcon } from "lucide-vue-next";
 
   interface Props {
@@ -9,19 +10,25 @@
     parentOrganization: string;
   }
 
-  const props = defineProps<Props>();
+  defineProps<Props>();
 
-  const positionUrl = computed(
-    () =>
-      `/organization/${props.parentOrganization}/position/${props.data.slug}`
-  );
+  const emit = defineEmits<{
+    edit: [void];
+    delete: [void];
+  }>();
 </script>
 
 <template>
   <context-menu-root>
     <context-menu-trigger as-child>
       <NuxtLink
-        :to="encodeURI(positionUrl)"
+        :to="{
+          name: CURRENT_POSITION,
+          params: {
+            orgSlug: parentOrganization,
+            positionSlug: data.slug,
+          },
+        }"
         class="hover:bg-neutral-grey-700 inline-flex items-center gap-x-2"
       >
         <lucide-map-pin-icon :size="18"></lucide-map-pin-icon>
@@ -36,19 +43,37 @@
         <context-menu-item
           value="Open new tab"
           class="group text-xs leading-none text-neutral-grey-1000 rounded-[3px] flex items-center h-[25px] px-[5px] relative pl-4 select-none outline-none data-[disabled]:text-neutral-grey-600 data-[disabled]:pointer-events-none data-[highlighted]:bg-neutral-grey-300 data-[highlighted]:text-neutral-grey-1300"
-          @select="openNewTab(positionUrl)"
+          @select="
+            async () =>
+              navigateTo(
+                {
+                  name: CURRENT_POSITION,
+                  params: {
+                    orgSlug: parentOrganization,
+                    positionSlug: data.slug,
+                  },
+                },
+                {
+                  open: {
+                    target: '_blank',
+                  },
+                }
+              )
+          "
         >
           Open new tab
         </context-menu-item>
         <context-menu-item
           value="Change title"
           class="group text-xs leading-none text-neutral-grey-1000 rounded-[3px] flex items-center h-[25px] px-[5px] relative pl-4 select-none outline-none data-[disabled]:text-neutral-grey-600 data-[disabled]:pointer-events-none data-[highlighted]:bg-neutral-grey-300 data-[highlighted]:text-neutral-grey-1300"
+          @select="emit('edit')"
         >
           Change title
         </context-menu-item>
         <context-menu-item
           value="Delete position"
           class="group text-xs leading-none text-danger-700 rounded-[3px] flex items-center h-[25px] px-[5px] relative pl-4 select-none outline-none data-[disabled]:text-neutral-grey-600 data-[disabled]:pointer-events-none data-[highlighted]:bg-neutral-grey-300 data-[highlighted]:text-neutral-grey-1300"
+          @select="emit('delete')"
         >
           Delete position
         </context-menu-item>
