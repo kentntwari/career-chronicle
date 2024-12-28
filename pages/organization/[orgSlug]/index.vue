@@ -27,6 +27,14 @@
     return [...new Set(years)];
   });
 
+  const isDeleting = ref(false);
+  const targetedPosition = ref<string>("");
+
+  function deletePosition(slug: string) {
+    isDeleting.value = true;
+    targetedPosition.value = slug;
+  }
+
   function pushPosition(newPosition: OrgPos[number]) {
     if (!!cachedPositions.data.value)
       cachedPositions.data.value.push(newPosition);
@@ -105,86 +113,130 @@
           </section>
           <div class="mt-6 space-y-8">
             <div class="min-h-40 flex flex-col gap-4">
-              <template v-if="!route.query.organize">
-                <app-data-position-snippet
-                  v-for="position in positions"
-                  :data="position"
-                  :key="position.slug"
-                  :parent-organization="stringifyRoute(route.params.orgSlug)"
-                />
-              </template>
+              <ui-dialog class="dialog-delete">
+                <template #trigger="{ open }">
+                  <template v-if="!route.query.organize">
+                    <app-data-position-snippet
+                      v-for="position in positions"
+                      :data="position"
+                      :key="position.slug"
+                      :parent-organization="
+                        stringifyRoute(route.params.orgSlug)
+                      "
+                      @delete="
+                        () => {
+                          deletePosition(position.slug);
+                          open();
+                        }
+                      "
+                    />
+                  </template>
 
-              <app-data-positions-organized :initial="positions" v-else>
-                <template #default="{ organizedData }">
-                  <app-data-position-snippet
-                    v-for="position in organizedData"
-                    :data="position"
-                    :key="position.slug"
-                    :parent-organization="stringifyRoute(route.params.orgSlug)"
-                  />
+                  <app-data-positions-organized :initial="positions" v-else>
+                    <template #default="{ organizedData }">
+                      <app-data-position-snippet
+                        v-for="position in organizedData"
+                        :data="position"
+                        :key="position.slug"
+                        :parent-organization="
+                          stringifyRoute(route.params.orgSlug)
+                        "
+                        @delete="
+                          () => {
+                            deletePosition(position.slug);
+                            open();
+                          }
+                        "
+                      />
+                    </template>
+                  </app-data-positions-organized>
                 </template>
-              </app-data-positions-organized>
-            </div>
-
-            <div class="flex flex-col-reverse items-start gap-y-6">
-              <ui-button
-                :variant="'link'"
-                :size="'link'"
-                @click="
-                  !route.query.organize
-                    ? router.push({
-                        query: {
-                          organize: 'true',
-                        },
-                      })
-                    : router.push({
-                        query: {},
-                      })
-                "
-                >{{ !route.query.organize ? "Organize" : "Unorganize" }} by year
-                and month</ui-button
-              >
-              <ui-dialog>
-                <template #trigger="{ open: createPosition }">
-                  <app-create-position-btn
-                    :data="positions"
-                    :variant="'link'"
-                    :size="'link'"
-                    @create="createPosition()"
-                  >
-                    Add position
-                  </app-create-position-btn>
-                </template>
-                <template v-slot="{ close }" #default>
+                <template #default="{ close }">
                   <visually-hidden>
                     <dialog-title></dialog-title>
                   </visually-hidden>
                   <visually-hidden
                     ><dialog-description></dialog-description
                   ></visually-hidden>
-                  <ui-toast
-                    type="error"
-                    title="Something went wrong"
-                    v-slot="{ triggerToast }"
-                  >
-                    <app-form-position
-                      :parent-organization="
-                        stringifyRoute(route.params.orgSlug)
-                      "
-                      @cancel="close()"
-                      @form-submitted="
-                        (data: OrgPos[number]) => {
-                          pushPosition(data);
-                          close();
-                        }
-                      "
-                    />
-                  </ui-toast>
+                  <lazy-app-form-delete
+                    :data="targetedPosition"
+                    :target="'POSITION'"
+                    :parent-org="stringifyRoute(route.params.orgSlug)"
+                    @cancel="
+                      () => {
+                        isDeleting = false;
+                        close();
+                      }
+                    "
+                    @update:delete="
+                      () => {
+                        isDeleting = false;
+                        close();
+                      }
+                    "
+                    v-if="isDeleting"
+                  />
                 </template>
               </ui-dialog>
             </div>
           </div>
         </template>
+        <div class="flex flex-col-reverse items-start gap-y-6">
+          <ui-button
+            :variant="'link'"
+            :size="'link'"
+            @click="
+              !route.query.organize
+                ? router.push({
+                    query: {
+                      organize: 'true',
+                    },
+                  })
+                : router.push({
+                    query: {},
+                  })
+            "
+            v-show="positions.length > 0"
+            >{{ !route.query.organize ? "Organize" : "Unorganize" }} by year and
+            month
+          </ui-button>
+          <ui-dialog>
+            <template #trigger="{ open: createPosition }">
+              <app-create-position-btn
+                :data="positions"
+                :variant="'link'"
+                :size="'link'"
+                @create="createPosition()"
+              >
+                Add position
+              </app-create-position-btn>
+            </template>
+            <template v-slot="{ close }" #default>
+              <visually-hidden>
+                <dialog-title></dialog-title>
+              </visually-hidden>
+              <visually-hidden
+                ><dialog-description></dialog-description
+              ></visually-hidden>
+              <ui-toast
+                type="error"
+                title="Something went wrong"
+                v-slot="{ triggerToast }"
+              >
+                <app-form-position
+                  :parent-organization="stringifyRoute(route.params.orgSlug)"
+                  @cancel="close()"
+                  @form-submitted="
+                    (data: OrgPos[number]) => {
+                      pushPosition(data);
+                      close();
+                    }
+                  "
+                />
+              </ui-toast>
+            </template>
+          </ui-dialog>
+        </div>
       </div>
     </section>
   </main>

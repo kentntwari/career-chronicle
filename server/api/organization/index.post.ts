@@ -19,10 +19,10 @@ export default defineEventHandler(async (event) => {
     const user = await kinde.getUser();
     const storage = useStorage(store.DATA_STORE);
     const isFirstTimeUser = await storage.getItem<boolean>(
-      store.resolveUser(user.email)
+      store.resolveFirstTimerUser(user.email)
     );
     if (isFirstTimeUser)
-      await storage.setItem(store.resolveUser(user.email), false);
+      await storage.setItem(store.resolveFirstTimerUser(user.email), false);
 
     // FIX: cached organizations and database must match.
     await enforcePlanLimits(event, user, "organization");

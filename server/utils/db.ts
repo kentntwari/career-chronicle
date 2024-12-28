@@ -39,6 +39,21 @@ export async function checkExistingDbUser(user: UserCredentials) {
   }
 }
 
+export async function deleteUser(user: UserCredentials) {
+  try {
+    const currentUser = await findExistingUser(user);
+    if (!currentUser) return;
+    await prisma.user.delete({
+      where: {
+        id: currentUser.id,
+      },
+    });
+    return;
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
 export async function findUserPlan(user: UserCredentials) {
   try {
     return prisma.user.findUnique({
@@ -177,6 +192,38 @@ export async function loadOrg(orgSlug: string) {
         loadedOrg.states?.firstChallengeCreated || false,
       hasCreatedProjectBefore: loadedOrg.states?.firstProjectCreated || false,
     };
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function deleteOrg(orgSlug: string) {
+  try {
+    const currentOrg = await prisma.organization.findFirst({
+      where: {
+        slug: orgSlug.toLocaleLowerCase(),
+      },
+      select: {
+        id: true,
+        organizationStatesId: true,
+      },
+    });
+
+    if (!currentOrg) return;
+
+    await prisma.organization.delete({
+      where: {
+        id: currentOrg.id,
+      },
+    });
+
+    await prisma.organizationStates.delete({
+      where: {
+        id: currentOrg.organizationStatesId ?? "",
+      },
+    });
+
+    return;
   } catch (error) {
     logAndThrow(error);
   }
@@ -353,6 +400,22 @@ export async function loadOrgPositions(
         },
       },
     });
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function deletePosition(orgSlug: string, positionSlug: string) {
+  try {
+    const currentPosition = await findExistingPosition(orgSlug, positionSlug);
+    if (!currentPosition) return;
+
+    await prisma.position.delete({
+      where: {
+        id: currentPosition.id,
+      },
+    });
+    return;
   } catch (error) {
     logAndThrow(error);
   }

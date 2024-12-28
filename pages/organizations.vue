@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import type { Orgs } from "~/types";
+  import type { Orgs, SingleOrg } from "~/types";
 
   definePageMeta({
     middleware: ["protected"],
@@ -39,6 +39,9 @@
   );
 
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
+
+  const isDeleting = ref(false);
+  const targetedOrg = ref<SingleOrg["slug"]>("");
 </script>
 
 <!-- TODO: Fix hydration mismatch -->
@@ -120,11 +123,48 @@
               No organizations created yet
             </p>
             <div class="flex flex-col gap-4" v-else>
-              <app-data-organization-snippet
-                v-for="org in organizations"
-                :data="org"
-                :key="org.slug"
-              />
+              <ui-dialog class="dialog-delete">
+                <template #trigger="{ open }">
+                  <app-data-organization-snippet
+                    v-for="org in organizations"
+                    :data="org"
+                    :key="org.slug"
+                    @edit="open()"
+                    @delete="
+                      () => {
+                        isDeleting = true;
+                        targetedOrg = org.slug;
+                        open();
+                      }
+                    "
+                  />
+                </template>
+                <template #default="{ close }">
+                  <visually-hidden>
+                    <dialog-title></dialog-title>
+                  </visually-hidden>
+                  <visually-hidden
+                    ><dialog-description></dialog-description
+                  ></visually-hidden>
+                  <lazy-app-form-delete
+                    :data="targetedOrg"
+                    :target="'ORGANIZATION'"
+                    @cancel="
+                      () => {
+                        isDeleting = false;
+                        close();
+                      }
+                    "
+                    @update:delete="
+                      () => {
+                        isDeleting = false;
+                        close();
+                      }
+                    "
+                    v-if="isDeleting"
+                  />
+                </template>
+              </ui-dialog>
             </div>
 
             <ui-dialog>

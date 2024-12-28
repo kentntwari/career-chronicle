@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     const user = await kinde.getUser();
 
     const isFirstTimeUser = await storage.getItem(
-      store.resolveUser(user.email)
+      store.resolveFirstTimerUser(user.email)
     );
 
     if (!isFirstTimeUser) {

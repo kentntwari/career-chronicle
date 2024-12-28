@@ -1,5 +1,3 @@
-import { H3Event } from "h3";
-
 import type { SingleOrg } from "~/types";
 
 import { redis } from "~/lib/redis";
@@ -9,35 +7,40 @@ import { loadOrg } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
 export default defineEventHandler(async (event) => {
-  const { kinde } = await allowAuthorizedKindeUser(event);
-  const { permissions } = await kinde.getPermissions();
-  authorize.hasPermissions(permissions as authorize.Permissions, "read:orgs");
+  try {
+    const { kinde } = await allowAuthorizedKindeUser(event);
+    const { permissions } = await kinde.getPermissions();
+    authorize.hasPermissions(permissions as authorize.Permissions, "read:orgs");
 
-  const organization = validateParams(
-    event,
-    "organization"
-  ).toLocaleLowerCase();
+    const organization = validateParams(
+      event,
+      "organization"
+    ).toLocaleLowerCase();
 
-  const user = await kinde.getUser();
+    const user = await kinde.getUser();
 
-  // FIX: cached positions and database must match.
-  // TODO: currently, there's no way to predict in advance
-  //what will be dropped from redis cache
-  const cachedOrgs = await redis.hgetall<SingleOrg>(
-    resolveOrg(user.email, organization)
-  );
+    // FIX: cached positions and database must match.
+    // TODO: currently, there's no way to predict in advance
+    //what will be dropped from redis cache
+    const cachedOrgs = await redis.hgetall<SingleOrg>(
+      resolveOrg(user.email, organization)
+    );
 
-  if (cachedOrgs) return cachedOrgs;
+    if (cachedOrgs) return cachedOrgs;
 
-  const dbOrg = await loadOrg(organization);
+    const dbOrg = await loadOrg(organization);
 
-  if (!dbOrg)
-    throw createError({
-      statusCode: 404,
-      statusMessage: "Not found",
-    });
+    if (!dbOrg)
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Not found",
+      });
 
-  await redis.hset(resolveOrg(user.email, organization), dbOrg);
+    await redis.hset(resolveOrg(user.email, organization), dbOrg);
 
-  return dbOrg;
+    return dbOrg;
+  } catch (error) {
+    console.log(error);
+    throwError(error);
+  }
 });

@@ -1,5 +1,8 @@
+import type { KindeAccessToken } from "~/types";
+
+import { redis } from "@/lib/redis";
+import * as store from "~/utils/keys";
 import { checkExistingDbUser } from "~/server/utils/db";
-import { resolveUser } from "~/utils/keys";
 
 // TODO: Might have to set httOnly to true
 // for now it's fine since it's just for client side purposes
@@ -11,20 +14,18 @@ const COOKIE_OPTIONS = {
 } as const;
 
 const COOKIE_NAME = "isFirstTime";
-const KV_STORE = "data";
 
 export default defineEventHandler(async (event) => {
   try {
-    const { kinde } = await allowAuthorizedKindeUser(event);
+    const n = useNitroApp();
 
-    //  check kv store
-    const storage = useStorage(KV_STORE);
+    const { kinde } = await allowAuthorizedKindeUser(event);
     const user = await kinde.getUser();
-    const isFirstTimeUser = await storage.getItem<boolean>(
-      resolveUser(user.email)
+
+    const isFirstTimeUser = await redis.get<boolean>(
+      store.resolveFirstTimerUser(user.email)
     );
 
-    // check if user ever existed
     if (isFirstTimeUser === null) {
       const isExistingUser = await checkExistingDbUser({
         id: user.id,
@@ -33,12 +34,18 @@ export default defineEventHandler(async (event) => {
 
       switch (true) {
         case isExistingUser:
-          await storage.setItem(resolveUser(user.email), "false");
+          await redis.set<boolean>(
+            store.resolveFirstTimerUser(user.email),
+            false
+          );
           setCookie(event, COOKIE_NAME, "false", COOKIE_OPTIONS);
           return null;
 
         default:
-          await storage.setItem(resolveUser(user.email), "true");
+          await redis.set<boolean>(
+            store.resolveFirstTimerUser(user.email),
+            true
+          );
           setCookie(event, COOKIE_NAME, "true", COOKIE_OPTIONS);
           return null;
       }
