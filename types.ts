@@ -31,6 +31,12 @@ export type KindeContext = {
   ) => ReturnType<ACClient[key]>;
 } & { sessionManager: SessionManager };
 
+export type KindeAccessToken = {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+};
+
 export type Orgs = Pick<Organization, "name" | "slug">[];
 export type SingleOrg = NonNullable<Awaited<ReturnType<typeof loadOrg>>>;
 export type SinglePos = NonNullable<Awaited<ReturnType<typeof loadPosition>>>;
