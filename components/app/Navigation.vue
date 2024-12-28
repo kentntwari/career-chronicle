@@ -1,6 +1,10 @@
 <script lang="ts" setup>
   import { User as LucideUserIcon } from "lucide-vue-next";
 
+  const emit = defineEmits<{
+    "update:delete-account": [void];
+  }>();
+
   const kinde = useKindeClient();
   const { data: userData } = useAsyncData("kinde-user", async () => {
     if (!kinde) return null;
@@ -61,9 +65,14 @@
                   >Sign in</nuxt-link
                 >
               </dropdown-menu-item>
-              <DropdownMenuItem v-show="$auth.loggedIn" class="text-danger-700"
-                >Delete account</DropdownMenuItem
+              <dropdown-menu-item
+                as="button"
+                v-show="$auth.loggedIn"
+                class="text-danger-700"
+                @select="emit('update:delete-account')"
               >
+                Delete account
+              </dropdown-menu-item>
             </dropdown-menu-content>
           </dropdown-menu-portal>
         </dropdown-menu-root>
