@@ -34,15 +34,6 @@ export default defineEventHandler(async (event) => {
 
     const benchmark = validateParams(event, "benchmark");
 
-    const rawQuery = getQuery(event);
-
-    if (!rawQuery || !rawQuery.payload)
-      throw createError({
-        statusCode: 400,
-        statusMessage: "Bad request",
-        message: "Invalid query",
-      });
-
     await enforcePlanLimits(event, user, benchmark, {
       targetOrganization: parentOrganization,
       targetPosition: parentPosition,

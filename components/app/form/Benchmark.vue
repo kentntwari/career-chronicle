@@ -45,13 +45,11 @@
         props.parentOrganization +
         "/position/" +
         props.parentPosition +
-        "/benchmark",
+        "/" +
+        props.benchmark.toLocaleLowerCase(),
       {
         method: "POST",
         body: payload,
-        query: {
-          payload: props.benchmark.toLocaleLowerCase(),
-        },
       }
     );
   });
