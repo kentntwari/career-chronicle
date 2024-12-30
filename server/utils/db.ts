@@ -799,6 +799,64 @@ export async function createPositionBenchmark(
   }
 }
 
+export async function deletePositionBenchmark(
+  parentOrgSlug: string,
+  positionSlug: string,
+  benchmarkCategory: z.infer<typeof queriedBenchmark>,
+  benchmarkToDelete: string
+) {
+  try {
+    const position = await findExistingPosition(parentOrgSlug, positionSlug);
+
+    if (!position) throw new Error("Position not found");
+
+    switch (benchmarkCategory) {
+      case benchmarks.ACHIEVEMENTS:
+        await prisma.achievement.delete({
+          where: {
+            slug: benchmarkToDelete,
+            positionId: position.id,
+          },
+        });
+        break;
+
+      case benchmarks.CHALLENGES:
+        await prisma.challenge.delete({
+          where: {
+            slug: benchmarkToDelete,
+            positionId: position.id,
+          },
+        });
+        break;
+
+      case benchmarks.FAILURES:
+        await prisma.failure.delete({
+          where: {
+            slug: benchmarkToDelete,
+            positionId: position.id,
+          },
+        });
+        break;
+
+      case benchmarks.PROJECTS:
+        await prisma.project.delete({
+          where: {
+            slug: benchmarkToDelete,
+            positionId: position.id,
+          },
+        });
+        break;
+
+      default:
+        break;
+    }
+
+    return;
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
 function logAndThrow(error: unknown) {
   switch (true) {
     // This error is thrown when the query is invalid
