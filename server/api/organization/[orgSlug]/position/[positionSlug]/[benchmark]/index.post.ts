@@ -47,13 +47,13 @@ export default defineEventHandler(async (event) => {
     // Cannot be null because it must traverse the parent organization and
     // set it before it reaches this point
     const cachedOrganization = (await redis.hgetall<SingleOrg>(
-      store.resolveOrg(user.email, parentOrganization)
+      store.resolveUserOrg(user.email, parentOrganization)
     )) as NonNullable<SingleOrg>;
 
     await Promise.all([
       // 1
       redis.rpush<Benchmarks[number]>(
-        store.resolvePosBenchmark(
+        store.resolveUserPosBenchmark(
           user.email,
           parentOrganization,
           parentPosition,
@@ -62,7 +62,7 @@ export default defineEventHandler(async (event) => {
         { ...cacheBulkPayload(submitted, benchmark) }
       ),
       // 2
-      redis.hset(store.resolveOrg(user.email, parentOrganization), {
+      redis.hset(store.resolveUserOrg(user.email, parentOrganization), {
         ...cacheNewStatePayload(cachedOrganization, benchmark),
       }),
       // 3
