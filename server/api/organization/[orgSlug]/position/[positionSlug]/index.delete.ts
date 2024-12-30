@@ -2,7 +2,7 @@ import type { OrgPos } from "~/types";
 
 import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
-import { resolveOrgPositions } from "~/utils/keys";
+import { resolveUserOrgPositions } from "~/utils/keys";
 import { deletePosition as deleteDbPosition } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
@@ -25,24 +25,18 @@ export default defineEventHandler(async (event) => {
     );
 
     const cachedPositions = await redis.lrange<OrgPos[number]>(
-      resolveOrgPositions(user.email, orgSlug),
+      resolveUserOrgPositions(user.email, orgSlug),
       0,
       -1
     );
-    const position: OrgPos[number] = cachedPositions.find(
-      (pos) => pos.slug === positionSlug
-    ) ?? {
-      title: "",
-      slug: positionSlug,
-      monthStartedAt: "JANUARY",
-      yearStartedAt: 1950,
-    };
+    const position = cachedPositions.find((pos) => pos.slug === positionSlug);
 
     const p = redis.pipeline();
     if (keys.length) p.del(...keys);
-    p.lrem<OrgPos[number]>(resolveOrgPositions(user.email, orgSlug), 0, {
-      ...position,
-    });
+    if (position)
+      p.lrem<OrgPos[number]>(resolveUserOrgPositions(user.email, orgSlug), 0, {
+        ...position,
+      });
 
     await Promise.all([p.exec(), , deleteDbPosition(orgSlug, positionSlug)]);
 

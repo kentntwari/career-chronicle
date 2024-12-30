@@ -13,11 +13,12 @@
     true
   );
 
-  const pk = useOrgPositionsKey();
-  const cachedPositions = useNuxtData<OrgPos>(pk.value);
-
   const route = useRoute();
   const router = useRouter();
+
+  const cachedPositions = useNuxtData<OrgPos>(
+    resolveOrgPositions(stringifyRoute(route.params.orgSlug))
+  );
 
   const accYears = computed(() => {
     if (!positions) return [];

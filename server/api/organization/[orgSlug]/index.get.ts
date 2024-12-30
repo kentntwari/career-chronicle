@@ -2,7 +2,7 @@ import type { SingleOrg } from "~/types";
 
 import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
-import { resolveOrg } from "~/utils/keys";
+import { resolveUserOrg } from "~/utils/keys";
 import { loadOrg } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     // TODO: currently, there's no way to predict in advance
     //what will be dropped from redis cache
     const cachedOrgs = await redis.hgetall<SingleOrg>(
-      resolveOrg(user.email, organization)
+      resolveUserOrg(user.email, organization)
     );
 
     if (cachedOrgs) return cachedOrgs;
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
         statusMessage: "Not found",
       });
 
-    await redis.hset(resolveOrg(user.email, organization), dbOrg);
+    await redis.hset(resolveUserOrg(user.email, organization), dbOrg);
 
     return dbOrg;
   } catch (error) {

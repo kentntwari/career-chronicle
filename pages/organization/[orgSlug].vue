@@ -29,9 +29,9 @@
     updateOrgPositionState,
   } = useCurrentOrganization();
 
-  const pk = useOrgPositionsKey();
+  const pk = resolveOrgPositions(stringifyRoute(route.params.orgSlug));
   const { data, status, error, execute } = await useLazyAsyncData<OrgPos>(
-    pk.value,
+    pk,
     () =>
       useRequestFetch()<OrgPos>(`${route.params.orgSlug}/positions`, {
         baseURL: "/api/organization",
@@ -46,8 +46,7 @@
   watch(
     () => computedOrganization.value,
     (d) => {
-      if (nuxtApp.payload.data[pk.value])
-        data.value = nuxtApp.payload.data[pk.value];
+      if (nuxtApp.payload.data[pk]) data.value = nuxtApp.payload.data[pk];
       else if (d.hasCreatedPositionBefore && d.name !== "") execute();
     },
     {
@@ -104,7 +103,7 @@
     class="flex-1 flex flex-col"
     v-else-if="computedOrganization.hasCreatedPositionBefore === false"
   >
-    <div class="mt-[4.5rem] max-w-[366px] text-balance font-medium">
+    <div class="mt-[4.5rem] ctainer max-w-[366px] text-balance font-medium">
       <p>
         It seems you haven’t registered any checkpoint in your journey at this
         organization.

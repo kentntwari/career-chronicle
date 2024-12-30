@@ -2,7 +2,7 @@ import type { UserType } from "@kinde-oss/kinde-typescript-sdk";
 import type { OrgPos } from "~/types";
 
 import * as authorize from "@/server/utils/authorize";
-import * as store from "~/utils/keys";
+import { resolveUserOrgPositions } from "~/utils/keys";
 import { queryByMonthOrYear } from "~/utils/zschemas";
 import * as db from "~/server/utils/db";
 import { z } from "zod";
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     // TODO: currently, there's no way to predict in advance
     //what will be dropped from redis cache
     const cachedPositions = await redis.lrange<OrgPos[number]>(
-      store.resolveOrgPositions(user.email, organization),
+      resolveUserOrgPositions(user.email, organization),
       0,
       -1
     );
@@ -65,7 +65,7 @@ async function cacheOrgPositions(
   positions: OrgPos
 ) {
   for (const pos of positions) {
-    await redis.rpush(store.resolveOrgPositions(userEmail, org), pos);
+    await redis.rpush(resolveUserOrgPositions(userEmail, org), pos);
   }
 }
 

@@ -32,14 +32,14 @@ export default defineEventHandler(async (event) => {
     // Cannot be null because it must traverse the parent organization and
     // set it before it reaches this point
     const cachedOrganization = (await redis.hgetall<SingleOrg>(
-      store.resolveOrg(user.email, parentOrganization)
+      store.resolveUserOrg(user.email, parentOrganization)
     )) as NonNullable<SingleOrg>;
 
     // TODO: extend unstorage with redis to unify cache method
     await Promise.all([
       // 1
       redis.rpush<OrgPos[number]>(
-        store.resolveOrgPositions(user.email, parentOrganization),
+        store.resolveUserOrgPositions(user.email, parentOrganization),
         {
           title: submitted.title.toLocaleLowerCase(),
           slug: submitted.slug.toLocaleLowerCase(),
@@ -50,13 +50,13 @@ export default defineEventHandler(async (event) => {
       // 2
       cachedOrganization.hasCreatedPositionBefore
         ? {}
-        : redis.hset(store.resolveOrg(user.email, parentOrganization), {
+        : redis.hset(store.resolveUserOrg(user.email, parentOrganization), {
             ...cachedOrganization,
             hasCreatedPositionBefore: true,
           }),
       // 3
       redis.hset(
-        store.resolvePos(user.email, parentOrganization, submitted.slug),
+        store.resolveUserPos(user.email, parentOrganization, submitted.slug),
         {
           title: submitted.title.toLocaleLowerCase(),
           slug: submitted.slug.toLocaleLowerCase(),

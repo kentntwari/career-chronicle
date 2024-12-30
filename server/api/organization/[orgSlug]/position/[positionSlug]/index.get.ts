@@ -2,7 +2,7 @@ import type { SinglePos } from "~/types";
 
 import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
-import { resolvePos } from "~/utils/keys";
+import { resolveUserPos } from "~/utils/keys";
 import { loadPosition } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
   // TODO: currently, there's no way to predict in advance
   //what will be dropped from redis cache
   const cachedPositions = await redis.hgetall<SinglePos>(
-    resolvePos(user.email, organization, position)
+    resolveUserPos(user.email, organization, position)
   );
 
   if (cachedPositions) return cachedPositions;
@@ -39,7 +39,10 @@ export default defineEventHandler(async (event) => {
       statusMessage: "Not found",
     });
 
-  await redis.hset(resolvePos(user.email, organization, position), dbPosition);
+  await redis.hset(
+    resolveUserPos(user.email, organization, position),
+    dbPosition
+  );
 
   return dbPosition;
 });

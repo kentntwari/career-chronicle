@@ -1,7 +1,7 @@
 import type { Benchmarks } from "~/types";
 
 import { redis } from "@/lib/redis";
-import * as store from "~/utils/keys";
+import { resolveUserPosBenchmark } from "~/utils/keys";
 import * as authorize from "@/server/utils/authorize";
 import { loadPositionBenchmarks } from "~/server/utils/db";
 import { queriedBenchmark } from "~/utils/zschemas";
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
     // TODO: cached values and database must always match.
     const cached = await redis.lrange<Benchmarks[number]>(
-      store.resolvePosBenchmark(
+      resolveUserPosBenchmark(
         user.email,
         organization,
         position,
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
 
         for (const benchmark of dbBenchmarks)
           await redis.rpush(
-            store.resolvePosBenchmark(
+            resolveUserPosBenchmark(
               user.email,
               organization,
               position,
