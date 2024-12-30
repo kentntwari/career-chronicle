@@ -5,7 +5,7 @@ import type { SingleOrg, SinglePos, Benchmark, Benchmarks } from "~/types";
 import { z } from "zod";
 
 import * as benchmarks from "~/constants/benchmarks";
-import * as store from "~/utils/keys";
+import * as k from "~/utils/keys";
 import {
   incomingNewProjectBody,
   incomingNewTimelineMarkerBody,
@@ -19,7 +19,7 @@ export function getCacheKey(
   value: string
 ) {
   if (benchmark === benchmarks.ACHIEVEMENTS)
-    return store.resolvePosAchievement(
+    return k.resolveUserPosAchievement(
       userEmail,
       parentOrganization,
       parentPosition,
@@ -27,7 +27,7 @@ export function getCacheKey(
     );
 
   if (benchmark === benchmarks.PROJECTS)
-    return store.resolvePosProject(
+    return k.resolveUserPosProject(
       userEmail,
       parentOrganization,
       parentPosition,
@@ -35,7 +35,7 @@ export function getCacheKey(
     );
 
   if (benchmark === benchmarks.CHALLENGES)
-    return store.resolvePosChallenge(
+    return k.resolveUserPosChallenge(
       userEmail,
       parentOrganization,
       parentPosition,
@@ -43,7 +43,7 @@ export function getCacheKey(
     );
 
   if (benchmark === benchmarks.FAILURES)
-    return store.resolvePosFailure(
+    return k.resolveUserPosFailure(
       userEmail,
       parentOrganization,
       parentPosition,

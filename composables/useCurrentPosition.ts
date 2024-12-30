@@ -1,5 +1,8 @@
 import type { SinglePos, Benchmarks, BenchmarkPayload } from "~/types";
+
+import * as benchmarks from "~/constants/benchmarks";
 import { CURRENT_BENCHMARK } from "~/constants/routeNames";
+import * as k from "~/utils/keys";
 
 export type PositionResponse = [SinglePos, Benchmarks, BenchmarkPayload | null];
 
@@ -33,24 +36,29 @@ const fetchCurrentBenchmark = (
 export function useCurrentPosition() {
   const route = useRoute();
 
-  const k = useCurrentPositionKey();
-  const allBenchmarksCacheKey = computed(
-    () =>
-      `pos:${route.params.positionSlug}:all-benchmarks:${route.query.benchmark}`
+  const posKey = k.resolvePos(stringifyRoute(route.params.positionSlug));
+  const allBenchmarksCacheKey = k.resolveAllPosBenchmarks(
+    stringifyRoute(route.params.positionSlug),
+    route.name === CURRENT_BENCHMARK
+      ? stringifyRoute(route.params.benchmark)
+      : route.query.benchmark
+        ? stringifyRoute(route.query.benchmark)
+        : benchmarks.ACHIEVEMENTS
   );
-  const benchmarkCacheKey = computed(
-    () => `pos:${route.params.positionSlug}:benchmark-payload:${route.query.v}`
+  const benchmarkCacheKey = k.resolvePosBenchmark(
+    stringifyRoute(route.params.positionSlug),
+    stringifyRoute(route.query.v)
   );
+
+  const { data: cachedPositionData } = useNuxtData<SinglePos>(posKey);
+  const { data: cachedBenchmarksData } = useNuxtData<Benchmarks>(
+    allBenchmarksCacheKey
+  );
+  const { data: cachedBenchmarkPayloadData } =
+    useNuxtData<BenchmarkPayload>(benchmarkCacheKey);
 
   const asyncData = useLazyAsyncData<PositionResponse>(
     async () => {
-      const { data: cachedPositionData } = useNuxtData<SinglePos>(k.value);
-      const { data: cachedBenchmarksData } = useNuxtData<Benchmarks>(
-        allBenchmarksCacheKey.value
-      );
-      const { data: cachedBenchmarkPayloadData } =
-        useNuxtData<BenchmarkPayload>(benchmarkCacheKey.value);
-
       const [position, benchmarks, currentBenchmark] = await Promise.all([
         !cachedPositionData.value
           ? fetchCurrentPosition(
@@ -123,9 +131,11 @@ export function useCurrentPosition() {
       () => route.params.benchmark,
       () => route.query.benchmark,
       () => route.query.v,
+      () => cachedBenchmarksData.value,
     ],
-    () => {
-      asyncData.execute();
+    ([a, b, c, d, e]) => {
+      if (!e) asyncData.refresh();
+      else asyncData.execute();
     },
     { immediate: true }
   );

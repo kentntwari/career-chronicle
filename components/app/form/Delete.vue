@@ -1,8 +1,16 @@
 <script lang="ts" setup>
-  import type { Orgs, OrgPos, SingleOrg, SinglePos, Benchmark } from "~/types";
+  import type {
+    Orgs,
+    OrgPos,
+    SingleOrg,
+    SinglePos,
+    Benchmark,
+    Benchmarks,
+  } from "~/types";
 
   import { deleteSchema } from "~/utils/zschemas";
   import * as benchmarks from "~/constants/benchmarks";
+  import { resolveAllPosBenchmarks } from "~/utils/keys";
 
   const props = defineProps<{
     target: "ORGANIZATION" | "POSITION" | "ACCOUNT" | Benchmark;
@@ -23,9 +31,13 @@
 
   const previousOrgs = ref<Orgs>([]);
   const previousPositions = ref<OrgPos>([]);
-  const orgPosKey = useOrgPositionsKey();
   const { data: currentOrgs } = useNuxtData<Orgs>("orgs");
-  const { data: currentPositions } = useNuxtData<OrgPos>(orgPosKey.value);
+  const { data: currentPositions } = useNuxtData<OrgPos>(
+    resolveOrgPositions(props.parentOrg ?? "")
+  );
+  const { data: allBenchmarks } = useNuxtData<Benchmarks>(
+    resolveAllPosBenchmarks(props.parentPosition ?? "", props.target)
+  );
 
   const onSubmit = handleSubmit((values) => {
     emit("update:delete", values.slug);
@@ -34,68 +46,101 @@
 
     switch (props.target) {
       case "ACCOUNT":
-        if (props.data === "delete-account")
-          $fetch("", {
-            method: "DELETE",
-            baseURL: "/api/user",
-            async onResponse() {
-              await navigateTo("/api/logout", {
-                external: true,
-              });
-            },
-          });
+        {
+          if (props.data === "delete-account")
+            $fetch("", {
+              method: "DELETE",
+              baseURL: "/api/user",
+              async onResponse() {
+                await navigateTo("/api/logout", {
+                  external: true,
+                });
+              },
+            });
+        }
+
         break;
 
       case "ORGANIZATION":
-        $fetch(`positions`, {
-          method: "DELETE",
-          baseURL: BASE_URL,
-          onRequest: () => {
-            if (currentOrgs.value) {
-              previousOrgs.value = currentOrgs.value;
-              currentOrgs.value = currentOrgs.value.filter(
-                (org) => org.slug !== values.slug
-              );
-            }
-          },
-          onRequestError: () => {
-            currentOrgs.value = previousOrgs.value;
-          },
-          async onResponse() {
-            await refreshNuxtData("orgs");
-          },
-        });
+        {
+          $fetch(`/${values.slug}`, {
+            method: "DELETE",
+            baseURL: BASE_URL,
+            onRequest: () => {
+              if (currentOrgs.value) {
+                previousOrgs.value = currentOrgs.value;
+                currentOrgs.value = currentOrgs.value.filter(
+                  (org) => org.slug !== values.slug
+                );
+              }
+            },
+            onRequestError: () => {
+              currentOrgs.value = previousOrgs.value;
+            },
+            async onResponse() {
+              await refreshNuxtData("orgs");
+            },
+          });
+        }
         break;
 
       case "POSITION":
-        if (!props.parentOrg) return;
+        {
+          if (!props.parentOrg) return;
 
-        const n = {
-          ...values,
-          parentOrg: props.parentOrg,
-        };
+          const n = {
+            ...values,
+            parentOrg: props.parentOrg,
+          };
 
-        $fetch(`${n.parentOrg}/position/${n.slug}`, {
-          method: "DELETE",
-          baseURL: BASE_URL,
-          onRequest: () => {
-            if (currentPositions.value) {
-              previousPositions.value = currentPositions.value;
-              currentPositions.value = currentPositions.value.filter(
-                (pos) => pos.slug !== n.slug
-              );
-            }
-          },
-          onRequestError: () => {
-            currentPositions.value = previousPositions.value;
-          },
-          async onResponse() {
-            await refreshNuxtData(orgPosKey.value);
-          },
-        });
+          $fetch(`${n.parentOrg}/position/${n.slug}`, {
+            method: "DELETE",
+            baseURL: BASE_URL,
+            onRequest: () => {
+              if (currentPositions.value) {
+                previousPositions.value = currentPositions.value;
+                currentPositions.value = currentPositions.value.filter(
+                  (pos) => pos.slug !== n.slug
+                );
+              }
+            },
+            onRequestError: () => {
+              currentPositions.value = previousPositions.value;
+            },
+            async onResponse() {
+              await refreshNuxtData(resolveOrgPositions(props.parentOrg!));
+            },
+          });
+        }
         break;
 
       default:
+        {
+          if (!props.parentOrg) return;
+          if (!props.parentPosition) return;
+
+          const n = {
+            ...values,
+            parentOrg: props.parentOrg,
+            parentPosition: props.parentPosition,
+          };
+
+          $fetch(
+            `${n.parentOrg}/position/${n.parentPosition}/${props.target.toLocaleLowerCase()}`,
+            {
+              method: "DELETE",
+              baseURL: BASE_URL,
+              query: {
+                data: n.slug,
+              },
+              async onResponse() {
+                // Must do this to trigger revalidation
+                // following logic of useCurrentPosition
+                allBenchmarks.value = null;
+              },
+            }
+          );
+        }
         break;
     }
   });

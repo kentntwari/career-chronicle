@@ -6,7 +6,7 @@ import { Tier } from "@prisma/client";
 import { UserType } from "@kinde-oss/kinde-typescript-sdk";
 
 import { redis } from "~/lib/redis";
-import * as store from "~/utils/keys";
+import * as k from "~/utils/keys";
 import * as benchmarks from "~/constants/benchmarks";
 import { queriedBenchmark } from "~/utils/zschemas";
 
@@ -103,11 +103,7 @@ export async function enforcePlanLimits<
 
 async function retrieveCachedOrgs(userEmail: UserType["email"]) {
   // TODO: extend unstorage with redis to unify cache method
-  return await redis.lrange<Orgs[number]>(
-    store.resolveUserOrgs(userEmail),
-    0,
-    -1
-  );
+  return await redis.lrange<Orgs[number]>(k.resolveUserOrgs(userEmail), 0, -1);
 }
 
 async function retrieveCachedPositions(
@@ -116,7 +112,7 @@ async function retrieveCachedPositions(
 ) {
   // TODO: extend unstorage with redis to unify cache method
   return await redis.lrange<OrgPos[number]>(
-    store.resolveOrgPositions(userEmail, org),
+    k.resolveUserOrgPositions(userEmail, org),
     0,
     -1
   );
@@ -130,7 +126,7 @@ async function retrieveCachedBenchmarks(
 ) {
   // TODO: extend unstorage with redis to unify cache method
   return await redis.lrange<Benchmarks[number]>(
-    store.resolvePosBenchmark(userEmail, org, position, benchmark),
+    k.resolveUserPosBenchmark(userEmail, org, position, benchmark),
     0,
     -1
   );

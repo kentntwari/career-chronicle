@@ -26,12 +26,12 @@
     return null;
   });
 
-  const orgPosKey = useOrgPositionsKey();
+  const orgPosKey = resolveOrgPositions(stringifyRoute(route.params.orgSlug));
   const { data, status, execute } = useLazyFetch<OrgPos>(
     `${route.params.orgSlug}/positions`,
     {
       key:
-        orgPosKey.value +
+        orgPosKey +
         ":organized:" +
         `${computedMonthQuery.value}-${computedYearQuery.value}`,
       baseURL: "/api/organization",

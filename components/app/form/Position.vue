@@ -21,8 +21,8 @@
     validationSchema: toTypedSchema(newTimelineMarker),
   });
 
-  const orgPosKey = useOrgPositionsKey();
-  const { data: currentPositions } = useNuxtData<OrgPos>(orgPosKey.value);
+  const orgPosKey = resolveOrgPositions(props.parentOrganization);
+  const { data: currentPositions } = useNuxtData<OrgPos>(orgPosKey);
 
   const [title, titleAtts] = defineField("title");
   const [month, monthAttrs] = defineField("timeline.month");
@@ -52,7 +52,7 @@
         emit("formSubmitted", newEntry);
       },
       onResponse() {
-        refreshNuxtData(orgPosKey.value);
+        refreshNuxtData(orgPosKey);
       },
     });
   });

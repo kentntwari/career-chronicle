@@ -16,8 +16,8 @@ interface UseCurrentOrganization {
 export function useCurrentOrganization(): UseCurrentOrganization {
   const route = useRoute();
 
-  const k = useOrganizationKey();
-  const organization = useState<SingleOrg>(k.value, () => ({
+  const k = resolveOrgPositions(stringifyRoute(route.params.orgSlug));
+  const organization = useState<SingleOrg>(k, () => ({
     ...DEFAULT_ORGANIZATION_OBJ,
   }));
 

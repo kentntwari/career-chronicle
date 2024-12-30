@@ -20,6 +20,10 @@ export function resolveUserOrgs(email: UserEmail) {
   return `user:${email.toLocaleLowerCase()}:orgs`;
 }
 
+export function resolveOrg(orgSlug: string) {
+  return `org:${orgSlug.toLocaleLowerCase()}`;
+}
+
 export function resolveUserPlan(email: UserEmail) {
   return `user:${email.toLocaleLowerCase()}:plan`;
 }
@@ -28,19 +32,23 @@ export function resolvePlanLimits(plan: Tier) {
   return `plan:${plan}:limits`;
 }
 
-export function resolveOrg(userEmail: UserEmail, orgSlug: string) {
+export function resolveUserOrg(userEmail: UserEmail, orgSlug: string) {
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}`;
 }
 
-export function resolveOrgPositions(userEmail: UserEmail, orgSlug: string) {
+export function resolveUserOrgPositions(userEmail: UserEmail, orgSlug: string) {
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:pos`;
 }
 
-export function resolveOrgStates(userEmail: string, orgSlug: string) {
+export function resolveOrgPositions(orgSlug: string) {
+  return `org:${orgSlug.toLocaleLowerCase()}:pos`;
+}
+
+export function resolveUserOrgStates(userEmail: string, orgSlug: string) {
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:states`;
 }
 
-export function resolvePos(
+export function resolveUserPos(
   userEmail: UserEmail,
   orgSlug: string,
   positionSlug: string
@@ -48,7 +56,11 @@ export function resolvePos(
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:pos:${positionSlug.toLocaleLowerCase()}`;
 }
 
-export function resolvePosBenchmark(
+export function resolvePos(positionSlug: string) {
+  return `pos:${positionSlug.toLocaleLowerCase()}`;
+}
+
+export function resolveUserPosBenchmark(
   userEmail: UserEmail,
   orgSlug: string,
   positionSlug: string,
@@ -57,7 +69,18 @@ export function resolvePosBenchmark(
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:pos:${positionSlug.toLocaleLowerCase()}:${benchmark.toLocaleLowerCase()}`;
 }
 
-export function resolvePosAchievement(
+export function resolveAllPosBenchmarks(
+  positionSlug: string,
+  benchmarkSlug: string
+) {
+  return `pos:${benchmarkSlug.toLocaleLowerCase()}:all-benchmarks:${positionSlug.toLocaleLowerCase()}`;
+}
+
+export function resolvePosBenchmark(positionSlug: string, value: string) {
+  return `pos:${positionSlug.toLocaleLowerCase()}:benchmark:${value.toLocaleLowerCase()}`;
+}
+
+export function resolveUserPosAchievement(
   userEmail: UserEmail,
   orgSlug: string,
   positionSlug: string,
@@ -66,7 +89,7 @@ export function resolvePosAchievement(
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:pos:${positionSlug.toLocaleLowerCase()}:ach:${achievementSlug.toLocaleLowerCase()}`;
 }
 
-export function resolvePosChallenge(
+export function resolveUserPosChallenge(
   userEmail: UserEmail,
   orgSlug: string,
   positionSlug: string,
@@ -75,7 +98,7 @@ export function resolvePosChallenge(
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:pos:${positionSlug.toLocaleLowerCase()}:cha:${challengeSlug.toLocaleLowerCase()}`;
 }
 
-export function resolvePosFailure(
+export function resolveUserPosFailure(
   userEmail: UserEmail,
   orgSlug: string,
   positionSlug: string,
@@ -84,7 +107,7 @@ export function resolvePosFailure(
   return `user:${userEmail.toLocaleLowerCase()}:org:${orgSlug.toLocaleLowerCase()}:pos:${positionSlug.toLocaleLowerCase()}:fai:${failureSlug.toLocaleLowerCase()}`;
 }
 
-export function resolvePosProject(
+export function resolveUserPosProject(
   userEmail: UserEmail,
   orgSlug: string,
   positionSlug: string,

@@ -1,22 +1,28 @@
 <script lang="ts" setup>
-  import type { OrgPos, SingleOrg } from "~/types";
+  import type { Month } from "@prisma/client";
+  import type { OrgPos, SingleOrg, Benchmark, Benchmarks } from "~/types";
 
   import { ChevronDown as LucideChevronDownIcon } from "lucide-vue-next";
 
   import { newProject, newTimelineMarker } from "~/utils/zschemas";
-  import * as benchmarks from "~/constants/benchmarks";
+  import { resolveAllPosBenchmarks } from "~/utils/keys";
   import months from "~/constants/months";
 
   const props = defineProps<{
     parentOrganization: SingleOrg["slug"];
     parentPosition: OrgPos[number]["slug"];
-    benchmark: (typeof benchmarks)[keyof typeof benchmarks];
+    benchmark: Benchmark;
   }>();
 
   const emit = defineEmits<{
     cancel: [void];
-    formSubmitted: [void];
+    formSubmitted: [data: Benchmarks[number]];
   }>();
+
+  const previousBenchmarks = ref<Benchmarks>([]);
+  const { data: allBenchmarks } = useNuxtData<Benchmarks>(
+    resolveAllPosBenchmarks(props.parentPosition, props.benchmark)
+  );
 
   // TODO: Must handle hidden errors like missing slug
   const { handleSubmit, defineField, errors, isSubmitting } = useForm({
@@ -38,7 +44,18 @@
       description: values.description?.toLowerCase(),
     };
 
-    emit("formSubmitted");
+    const optimisticBenchmark = {
+      title: payload.title,
+      slug: payload.slug,
+      monthStartedAt: payload.timeline.month.toLocaleUpperCase() as Month,
+      monthOccuredAt: null,
+      yearOccuredAt: null,
+      yearStartedAt: payload.timeline.year,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    emit("formSubmitted", optimisticBenchmark);
 
     $fetch(
       "/api/organization/" +
@@ -50,6 +67,11 @@
       {
         method: "POST",
         body: payload,
+        onResponse: () => {
+          // Doing this will trigger a revalidation of the data
+          // within the useCurrentPosition hook
+          allBenchmarks.value = null;
+        },
       }
     );
   });
