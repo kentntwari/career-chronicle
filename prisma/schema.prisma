@@ -23,7 +23,6 @@ model User {
   updatedAt          DateTime             @updatedAt @map("updated_at")
   plan               Plan?                @relation(fields: [planId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   planId             String?              @map("plan_id")
-  OrganizationStates OrganizationStates[]
 
   @@index([id, email], name: "user_idx")
   @@map("user")
@@ -44,31 +43,29 @@ model Plan {
 }
 
 model Organization {
-  id                   String              @id @default(cuid())
-  name                 String              @db.VarChar(250)
-  slug                 String              @unique
-  positions            Position[]
-  user                 User?               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId               String?             @map("user_id")
-  createdAt            DateTime            @default(now()) @map("created_at")
-  updatedAt            DateTime            @updatedAt @map("updated_at")
-  states               OrganizationStates? @relation(fields: [organizationStatesId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  organizationStatesId String?             @unique
+  id        String              @id @default(cuid())
+  name      String              @db.VarChar(250)
+  slug      String              @unique
+  positions Position[]
+  user      User?               @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String?             @map("user_id")
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  states    OrganizationStates?
 
   @@index([id, slug], name: "organization_idx")
   @@map("organization")
 }
 
 model OrganizationStates {
-  id                      String        @id @default(cuid())
-  firstPositionCreated    Boolean       @default(false) @map("first_position_created")
-  firstAchievementCreated Boolean       @default(false) @map("first_achievement_created")
-  firstFailureCreated     Boolean       @default(false) @map("first_failure_created")
-  firstChallengeCreated   Boolean       @default(false) @map("first_challenge_created")
-  firstProjectCreated     Boolean       @default(false) @map("first_project_created")
-  organization            Organization?
-  user                    User?         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  userId                  String?       @map("user_id")
+  id                      String       @id @default(cuid())
+  firstPositionCreated    Boolean      @default(false) @map("first_position_created")
+  firstAchievementCreated Boolean      @default(false) @map("first_achievement_created")
+  firstFailureCreated     Boolean      @default(false) @map("first_failure_created")
+  firstChallengeCreated   Boolean      @default(false) @map("first_challenge_created")
+  firstProjectCreated     Boolean      @default(false) @map("first_project_created")
+  organization            Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  organizationId          String       @unique @map("organization_id")
 }
 
 model Position {
