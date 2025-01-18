@@ -16,10 +16,7 @@ export default defineEventHandler(async (event) => {
       "update:position"
     );
 
-    const parentOrganization = validateParams(
-      event,
-      "organization"
-    ).toLocaleLowerCase();
+    const parentOrganization = validateParams(event, "organization");
 
     const user = await kinde.getUser();
 
@@ -28,9 +25,17 @@ export default defineEventHandler(async (event) => {
     });
 
     const submitted = await validateSubmission(event, "position");
+    const coerced = {
+      ...submitted,
+      title: submitted.title.toLocaleLowerCase(),
+      slug: submitted.slug.toLocaleLowerCase(),
+      description: submitted.description?.toLocaleLowerCase() ?? undefined,
+      timeline: {
+        ...submitted.timeline,
+        month: submitted.timeline.month.toLocaleUpperCase() as Month,
+      },
+    } satisfies typeof submitted;
 
-    // Cannot be null because it must traverse the parent organization and
-    // set it before it reaches this point
     const cachedOrganization = (await redis.hgetall<SingleOrg>(
       store.resolveUserOrg(user.email, parentOrganization)
     )) as NonNullable<SingleOrg>;
@@ -41,10 +46,9 @@ export default defineEventHandler(async (event) => {
       redis.rpush<OrgPos[number]>(
         store.resolveUserOrgPositions(user.email, parentOrganization),
         {
-          title: submitted.title.toLocaleLowerCase(),
-          slug: submitted.slug.toLocaleLowerCase(),
-          monthStartedAt: submitted.timeline.month.toUpperCase() as Month,
-          yearStartedAt: submitted.timeline.year,
+          ...coerced,
+          monthStartedAt: coerced.timeline.month,
+          yearStartedAt: coerced.timeline.year,
         }
       ),
       // 2
@@ -53,20 +57,20 @@ export default defineEventHandler(async (event) => {
         : redis.hset(store.resolveUserOrg(user.email, parentOrganization), {
             ...cachedOrganization,
             hasCreatedPositionBefore: true,
-          }),
+          } ),
       // 3
       redis.hset(
-        store.resolveUserPos(user.email, parentOrganization, submitted.slug),
+        store.resolveUserPos(user.email, parentOrganization, coerced.slug),
         {
-          title: submitted.title.toLocaleLowerCase(),
-          slug: submitted.slug.toLocaleLowerCase(),
-          description: submitted.description?.toLocaleLowerCase() ?? null,
-          monthStartedAt: submitted.timeline.month.toUpperCase() as Month,
-          yearStartedAt: submitted.timeline.year,
-        }
+          title: coerced.title,
+          slug: coerced.slug,
+          description: coerced.description ?? null,
+          monthStartedAt: coerced.timeline.month,
+          yearStartedAt: coerced.timeline.year,
+        } satisfies SinglePos
       ),
       // 4
-      createOrgPosition(parentOrganization, submitted),
+      createOrgPosition(parentOrganization, coerced),
     ]);
     return null;
   } catch (error) {
