@@ -17,11 +17,8 @@ export default defineEventHandler(async (event) => {
 
     const user = await kinde.getUser();
 
-    const organization = validateParams(
-      event,
-      "organization"
-    ).toLocaleLowerCase();
-    const position = validateParams(event, "position").toLocaleLowerCase();
+    const organization = validateParams(event, "organization");
+    const position = validateParams(event, "position");
 
     const rawQuery = getQuery(event);
     const parsedQuery = queriedBenchmark.safeParse(rawQuery.kind);
@@ -33,14 +30,16 @@ export default defineEventHandler(async (event) => {
         message: "Invalid query",
       });
 
+    const CACHED_FN_ARGS = [
+      user.email,
+      organization,
+      position,
+      parsedQuery.data,
+    ] as const;
+
     // TODO: cached values and database must always match.
     const cached = await redis.lrange<Benchmarks[number]>(
-      resolveUserPosBenchmark(
-        user.email,
-        organization,
-        position,
-        parsedQuery.data
-      ),
+      resolveUserPosBenchmark(...CACHED_FN_ARGS),
       0,
       -1
     );
@@ -61,12 +60,7 @@ export default defineEventHandler(async (event) => {
 
         for (const benchmark of dbBenchmarks)
           await redis.rpush(
-            resolveUserPosBenchmark(
-              user.email,
-              organization,
-              position,
-              parsedQuery.data
-            ),
+            resolveUserPosBenchmark(...CACHED_FN_ARGS),
             benchmark
           );
 

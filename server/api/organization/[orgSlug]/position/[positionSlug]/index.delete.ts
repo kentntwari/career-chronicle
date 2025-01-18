@@ -2,7 +2,7 @@ import type { OrgPos } from "~/types";
 
 import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
-import { resolveUserOrgPositions } from "~/utils/keys";
+import { resolveUserPos, resolveUserOrgPositions } from "~/utils/keys";
 import { deletePosition as deleteDbPosition } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
@@ -17,11 +17,11 @@ export default defineEventHandler(async (event) => {
 
     const user = await kinde.getUser();
 
-    const orgSlug = validateParams(event, "organization").toLocaleLowerCase();
-    const positionSlug = validateParams(event, "position").toLocaleLowerCase();
+    const orgSlug = validateParams(event, "organization");
+    const positionSlug = validateParams(event, "position");
 
     const keys = await redis.keys(
-      `*org:${orgSlug.toLocaleLowerCase()}:pos:${positionSlug.toLocaleLowerCase()}*`
+      `*${resolveUserPos(user.email, orgSlug, positionSlug)}*`
     );
 
     const cachedPositions = await redis.lrange<OrgPos[number]>(
@@ -38,7 +38,7 @@ export default defineEventHandler(async (event) => {
         ...position,
       });
 
-    await Promise.all([p.exec(), , deleteDbPosition(orgSlug, positionSlug)]);
+    await Promise.all([p.exec(), deleteDbPosition(orgSlug, positionSlug)]);
 
     return;
   } catch (error) {

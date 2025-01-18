@@ -16,11 +16,8 @@ export default defineEventHandler(async (event) => {
 
   const user = await kinde.getUser();
 
-  const organization = validateParams(
-    event,
-    "organization"
-  ).toLocaleLowerCase();
-  const position = validateParams(event, "position").toLocaleLowerCase();
+  const organization = validateParams(event, "organization");
+  const position = validateParams(event, "position");
 
   // FIX: cached positions and database must match.
   // TODO: currently, there's no way to predict in advance
