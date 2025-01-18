@@ -5,7 +5,7 @@ import { z } from "zod";
 import { redis } from "@/lib/redis";
 import * as authorize from "@/server/utils/authorize";
 import { loadBenchmark } from "~/server/utils/db";
-import { getCacheKey } from "~/server/utils/benchmarks";
+import { getSingleResourceCacheKey } from "~/server/utils/benchmarks";
 
 const ORGANIZATION = "organization" as const;
 const POSITION = "position" as const;
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
       event,
       ORGANIZATION
     ).toLocaleLowerCase();
-    const position = validateParams(event, POSITION).toLocaleLowerCase();
+    const position = validateParams(event, POSITION);
     const benchmark = validateParams(event, BENCHMARK);
 
     const query = getQuery(event);
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       });
 
     const cached = await redis.hgetall<BenchmarkPayload>(
-      getCacheKey(
+      getSingleResourceCacheKey(
         user.email,
         organization,
         position,
@@ -66,11 +66,10 @@ export default defineEventHandler(async (event) => {
       });
 
     await redis.hset(
-      getCacheKey(
+      getSingleResourceCacheKey(
         user.email,
         organization,
         position,
-
         benchmark,
         parsedQuery.data
       ),
