@@ -28,7 +28,7 @@ export function validateParams<T extends Target>(event: H3Event, directory: T) {
           statusMessage: "Bad request",
           message: "Organization not provided",
         });
-      else return organization;
+      else return organization.toLocaleLowerCase();
 
     case directory === "position":
       const position = getRouterParam(event, "positionSlug");
@@ -38,7 +38,7 @@ export function validateParams<T extends Target>(event: H3Event, directory: T) {
           statusMessage: "Bad request",
           message: "Position not provided",
         });
-      else return position;
+      else return position.toLocaleLowerCase();
 
     case directory === "benchmark":
       const benchmark = getRouterParam(event, "benchmark");

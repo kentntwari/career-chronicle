@@ -5,8 +5,11 @@ import {
   incomingNewOrgBody,
   incomingNewTimelineMarkerBody,
   incomingNewProjectBody,
+  patchSchema,
+  newOrg,
 } from "~/utils/zschemas";
 
+const METHOD = ["POST", "PUT", "PATCH"] as const;
 const ORGANIZATION = "organization" as const;
 const POSITION = "position" as const;
 
@@ -38,9 +41,23 @@ export async function validateSubmission(
   >]
 ): Promise<z.infer<typeof incomingNewTimelineMarkerBody>>;
 
+export async function validateSubmission(
+  event: H3Event,
+  target:
+    | typeof ORGANIZATION
+    | typeof POSITION
+    | (typeof benchmark)["PROJECTS"]
+    | (typeof benchmark)[Exclude<
+        (typeof benchmark)[keyof typeof benchmark],
+        "PROJECTS"
+      >],
+  action: "PATCH"
+): Promise<z.infer<typeof patchSchema>>;
+
 export async function validateSubmission<T extends Target>(
   event: H3Event,
-  target: T
+  target: T,
+  action: (typeof METHOD)[number] = "POST"
 ) {
   if (
     target !== ORGANIZATION &&
@@ -55,12 +72,15 @@ export async function validateSubmission<T extends Target>(
   const submitted = await readValidatedBody(event, (body) => {
     switch (true) {
       case target === ORGANIZATION:
+        if (action === "PATCH") return patchSchema.safeParse(body);
         return incomingNewOrgBody.safeParse(body);
 
       case target === benchmark.PROJECTS:
+        if (action === "PATCH") return patchSchema.safeParse(body);
         return incomingNewProjectBody.safeParse(body);
 
       default:
+        if (action === "PATCH") return patchSchema.safeParse(body);
         return incomingNewTimelineMarkerBody.safeParse(body);
     }
   });
