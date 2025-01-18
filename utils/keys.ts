@@ -121,15 +121,23 @@ export function resolveProvidedKeys() {
     organizations: {
       all: "provided:orgs:all",
       current: "provided:orgs:current",
+      state: "provided:orgs:state",
     },
     positions: {
       all: "provided:positions:all",
       current: "provided:positions:current",
+      state: "provided:positions:state",
+    },
+    benchmarks: {
+      all: "provided:benchmarks:all",
+      current: "provided:benchmarks:current",
+      state: "provided:benchmarks:state",
     },
     benchmark: {
       parentOrganization: "provided:benchmark:parent:org",
       parentPosition: "provided:benchmark:parent:position",
       kind: "provided:benchmark:parent:kind",
+      state: "provided:benchmark:state",
     },
     form: {
       benchmark: "provided:form:benchmark",
