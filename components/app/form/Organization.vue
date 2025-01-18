@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import type { Orgs } from "~/types";
-  
+
   const emit = defineEmits<{
     cancel: [void];
     formSubmitted: [void];
@@ -16,8 +16,8 @@
   const { data: currentOrgs } = useNuxtData<Orgs>("orgs");
   const onSubmit = handleSubmit((values) => {
     const newOrg = {
-      name: values.name.toLowerCase(),
-      slug: generateSlug(values.name.toLowerCase()),
+      name: values.name.toLocaleLowerCase(),
+      slug: generateSlug(values.name),
     };
 
     emit("formSubmitted");

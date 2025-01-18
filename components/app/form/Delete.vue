@@ -5,12 +5,12 @@
     SingleOrg,
     SinglePos,
     Benchmark,
-    Benchmarks,
+    BenchmarkState,
   } from "~/types";
 
   import { deleteSchema } from "~/utils/zschemas";
   import * as benchmarks from "~/constants/benchmarks";
-  import { resolveAllPosBenchmarks } from "~/utils/keys";
+  import { resolveProvidedKeys } from "~/utils/keys";
 
   const props = defineProps<{
     target: "ORGANIZATION" | "POSITION" | "ACCOUNT" | Benchmark;
@@ -24,6 +24,10 @@
     "update:delete": [data: string];
   }>();
 
+  const injected = inject<BenchmarkState>(
+    resolveProvidedKeys().benchmarks.state
+  );
+
   const { handleSubmit, isSubmitting } = useForm({
     validationSchema: toTypedSchema(deleteSchema),
     initialValues: { slug: props.data },
@@ -34,9 +38,6 @@
   const { data: currentOrgs } = useNuxtData<Orgs>("orgs");
   const { data: currentPositions } = useNuxtData<OrgPos>(
     resolveOrgPositions(props.parentOrg ?? "")
-  );
-  const { data: allBenchmarks } = useNuxtData<Benchmarks>(
-    resolveAllPosBenchmarks(props.parentPosition ?? "", props.target)
   );
 
   const onSubmit = handleSubmit((values) => {
@@ -135,8 +136,8 @@
               },
               async onResponse() {
                 // Must do this to trigger revalidation
-                // following logic of useCurrentPosition
-                allBenchmarks.value = null;
+                // within useCurrentPosition
+                if (injected) injected.update();
               },
             }
           );

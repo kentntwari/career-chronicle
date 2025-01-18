@@ -1,11 +1,17 @@
 <script lang="ts" setup>
   import type { Month } from "@prisma/client";
-  import type { OrgPos, SingleOrg, Benchmark, Benchmarks } from "~/types";
+  import type {
+    OrgPos,
+    SingleOrg,
+    Benchmark,
+    Benchmarks,
+    BenchmarkState,
+  } from "~/types";
 
   import { ChevronDown as LucideChevronDownIcon } from "lucide-vue-next";
 
   import { newProject, newTimelineMarker } from "~/utils/zschemas";
-  import { resolveAllPosBenchmarks } from "~/utils/keys";
+  import { resolveProvidedKeys } from "~/utils/keys";
   import months from "~/constants/months";
 
   const props = defineProps<{
@@ -19,9 +25,8 @@
     formSubmitted: [data: Benchmarks[number]];
   }>();
 
-  const previousBenchmarks = ref<Benchmarks>([]);
-  const { data: allBenchmarks } = useNuxtData<Benchmarks>(
-    resolveAllPosBenchmarks(props.parentPosition, props.benchmark)
+  const injectBenchmarkState = inject<BenchmarkState>(
+    resolveProvidedKeys().benchmarks.state
   );
 
   // TODO: Must handle hidden errors like missing slug
@@ -39,9 +44,9 @@
   const onSubmit = handleSubmit((values) => {
     const payload = {
       ...values,
-      title: values.title.toLowerCase(),
-      slug: generateSlug(values.title.toLowerCase()),
-      description: values.description?.toLowerCase(),
+      title: values.title.toLocaleLowerCase(),
+      slug: generateSlug(values.title),
+      description: values.description?.toLocaleLowerCase(),
     };
 
     const optimisticBenchmark = {
@@ -70,7 +75,7 @@
         onResponse: () => {
           // Doing this will trigger a revalidation of the data
           // within the useCurrentPosition hook
-          allBenchmarks.value = null;
+          if (injectBenchmarkState) injectBenchmarkState.update();
         },
       }
     );
