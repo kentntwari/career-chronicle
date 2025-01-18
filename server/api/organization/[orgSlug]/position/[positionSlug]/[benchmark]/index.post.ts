@@ -1,4 +1,10 @@
-import type { Achievement, Project, Failure, Challenge } from "@prisma/client";
+import type {
+  Achievement,
+  Project,
+  Failure,
+  Challenge,
+  Month,
+} from "@prisma/client";
 import type { SingleOrg, Benchmark, Benchmarks } from "~/types";
 
 import { redis } from "~/lib/redis";
@@ -6,7 +12,7 @@ import * as store from "~/utils/keys";
 import * as benchmarks from "~/constants/benchmarks";
 import * as authorize from "@/server/utils/authorize";
 import {
-  getCacheKey,
+  getSingleResourceCacheKey,
   cacheBenchmarkPayload,
   cacheBulkPayload,
   NOW,
@@ -22,32 +28,33 @@ export default defineEventHandler(async (event) => {
     );
     const user = await kinde.getUser();
 
-    const parentOrganization = validateParams(
-      event,
-      "organization"
-    ).toLocaleLowerCase();
-
-    const parentPosition = validateParams(
-      event,
-      "position"
-    ).toLocaleLowerCase();
-
+    const orgSlug = validateParams(event, "organization");
+    const positionSlug = validateParams(event, "position");
     const benchmark = validateParams(event, "benchmark");
 
     await enforcePlanLimits(event, user, benchmark, {
-      targetOrganization: parentOrganization,
-      targetPosition: parentPosition,
+      targetOrganization: orgSlug,
+      targetPosition: positionSlug,
     });
 
     const submitted = await validateSubmission(
       event,
       benchmark as Benchmark & (typeof benchmarks)["PROJECTS"]
     );
+    const coerced = {
+      title: submitted.title.toLocaleLowerCase(),
+      description: submitted.description?.toLocaleLowerCase() ?? undefined,
+      slug: submitted.slug.toLocaleLowerCase(),
+      timeline: {
+        ...submitted.timeline,
+        month: submitted.timeline.month.toLocaleUpperCase() as Month,
+      },
+    } satisfies typeof submitted;
 
     // Cannot be null because it must traverse the parent organization and
     // set it before it reaches this point
     const cachedOrganization = (await redis.hgetall<SingleOrg>(
-      store.resolveUserOrg(user.email, parentOrganization)
+      store.resolveUserOrg(user.email, orgSlug)
     )) as NonNullable<SingleOrg>;
 
     await Promise.all([
@@ -55,35 +62,35 @@ export default defineEventHandler(async (event) => {
       redis.rpush<Benchmarks[number]>(
         store.resolveUserPosBenchmark(
           user.email,
-          parentOrganization,
-          parentPosition,
+          orgSlug,
+          positionSlug,
           benchmark
         ),
-        { ...cacheBulkPayload(submitted, benchmark) }
+        { ...cacheBulkPayload(coerced, benchmark) }
       ),
       // 2
-      redis.hset(store.resolveUserOrg(user.email, parentOrganization), {
+      redis.hset(store.resolveUserOrg(user.email, orgSlug), {
         ...cacheNewStatePayload(cachedOrganization, benchmark),
       }),
       // 3
       redis.hset(
-        getCacheKey(
+        getSingleResourceCacheKey(
           user.email,
-          parentOrganization,
-          parentPosition,
+          orgSlug,
+          positionSlug,
           benchmark,
-          submitted.slug
+          coerced.slug
         ),
         {
-          ...(cacheBenchmarkPayload(submitted, benchmark) as Omit<
+          ...(cacheBenchmarkPayload(coerced, benchmark) as Omit<
             Achievement | Failure | Project | Challenge,
             "id" | "positionId"
           >),
         }
       ),
       // 4
-      createPositionBenchmark(parentOrganization, parentPosition, benchmark, {
-        ...submitted,
+      createPositionBenchmark(orgSlug, positionSlug, benchmark, {
+        ...coerced,
         createdAt: NOW,
         updatedAt: NOW,
       }),

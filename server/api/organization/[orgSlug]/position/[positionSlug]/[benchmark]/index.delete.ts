@@ -4,8 +4,8 @@ import { z } from "zod";
 
 import { redis } from "~/lib/redis";
 import * as authorize from "@/server/utils/authorize";
-import * as benchmarks from "~/constants/benchmarks";
 import * as k from "~/utils/keys";
+import { getSingleResourceCacheKey } from "~/server/utils/benchmarks";
 import { deletePositionBenchmark as deleteDbBenchmark } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
@@ -43,29 +43,9 @@ export default defineEventHandler(async (event) => {
         message: "Invalid data provided",
       });
 
-    let keys: string[] = [];
-    const args = [user.email, orgSlug, positionSlug, parsed.data] as const;
-    switch (benchmarkCategory) {
-      case benchmarks.ACHIEVEMENTS:
-        keys = await redis.keys(`*${k.resolveUserPosAchievement(...args)}*`);
-        break;
-
-      case benchmarks.CHALLENGES:
-        keys = await redis.keys(`*${k.resolveUserPosChallenge(...args)}*`);
-        break;
-
-      case benchmarks.FAILURES:
-        keys = await redis.keys(`*${k.resolveUserPosFailure(...args)}*`);
-        break;
-
-      case benchmarks.PROJECTS:
-        keys = await redis.keys(`*${k.resolveUserPosProject(...args)}*`);
-        break;
-
-      default:
-        keys = [];
-        break;
-    }
+    const keys = await redis.keys(
+      `*${getSingleResourceCacheKey(user.email, orgSlug, positionSlug, benchmarkCategory, parsed.data)}*`
+    );
 
     const cachedBenchmarks = await redis.lrange<Benchmarks[number]>(
       k.resolveUserPosBenchmark(
