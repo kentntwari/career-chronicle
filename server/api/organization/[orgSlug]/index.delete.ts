@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
 
     const user = await kinde.getUser();
 
-    const orgSlug = validateParams(event, "organization").toLocaleLowerCase();
+    const orgSlug = validateParams(event, "organization");
 
     const keys = await redis.keys(`*${orgSlug}*`);
 
@@ -27,7 +27,6 @@ export default defineEventHandler(async (event) => {
       -1
     );
     const orgName = cachedOrgs.find((org) => org.slug === orgSlug)?.name ?? "";
-
     const p = redis.pipeline();
     if (keys.length) p.del(...keys);
     p.lrem<Orgs[number]>(resolveUserOrgs(user.email), 0, {
@@ -35,7 +34,7 @@ export default defineEventHandler(async (event) => {
       slug: orgSlug,
     });
 
-    await Promise.all([p.exec(), , deleteDbOrg(orgSlug)]);
+    await Promise.all([p.exec(), deleteDbOrg(orgSlug)]);
 
     return;
   } catch (error) {

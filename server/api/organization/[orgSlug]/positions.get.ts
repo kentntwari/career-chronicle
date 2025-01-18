@@ -19,10 +19,7 @@ export default defineEventHandler(async (event) => {
       "read:position"
     );
 
-    const organization = validateParams(
-      event,
-      "organization"
-    ).toLocaleLowerCase();
+    const organization = validateParams(event, "organization");
     const query = getQuery(event);
     const parsedQuery = queryByMonthOrYear.safeParse(query);
 

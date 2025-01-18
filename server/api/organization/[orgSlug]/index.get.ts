@@ -12,10 +12,7 @@ export default defineEventHandler(async (event) => {
     const { permissions } = await kinde.getPermissions();
     authorize.hasPermissions(permissions as authorize.Permissions, "read:orgs");
 
-    const organization = validateParams(
-      event,
-      "organization"
-    ).toLocaleLowerCase();
+    const organization = validateParams(event, "organization");
 
     const user = await kinde.getUser();
 
