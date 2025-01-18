@@ -31,7 +31,8 @@
 
 <template>
   <select-root
-    v-model="selected"
+    :default-value="default"
+    v-model:model-value="selected"
     @update:model-value="emit('update:selected', selected)"
   >
     <select-trigger
