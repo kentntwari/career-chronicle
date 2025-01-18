@@ -1,5 +1,5 @@
 import { Month, Prisma, Tier } from "@prisma/client";
-import { Benchmark, BenchmarkPayload } from "~/types";
+import { Benchmark, BenchmarkPayload, SinglePos } from "~/types";
 
 import { z } from "zod";
 
@@ -170,7 +170,7 @@ export async function loadOrg(orgSlug: string) {
   try {
     const loadedOrg = await prisma.organization.findFirst({
       where: {
-        slug: orgSlug.toLocaleLowerCase(),
+        slug: orgSlug,
       },
       select: {
         name: true,
@@ -182,8 +182,8 @@ export async function loadOrg(orgSlug: string) {
     if (!loadedOrg) return null;
 
     return {
-      name: loadedOrg.name.toLocaleLowerCase(),
-      slug: loadedOrg.slug.toLocaleLowerCase(),
+      name: loadedOrg.name,
+      slug: loadedOrg.slug,
       hasCreatedPositionBefore: loadedOrg.states?.firstPositionCreated || false,
       hasCreatedAchievementBefore:
         loadedOrg.states?.firstAchievementCreated || false,
@@ -201,11 +201,10 @@ export async function deleteOrg(orgSlug: string) {
   try {
     const currentOrg = await prisma.organization.findFirst({
       where: {
-        slug: orgSlug.toLocaleLowerCase(),
+        slug: orgSlug,
       },
       select: {
         id: true,
-        organizationStatesId: true,
       },
     });
 
@@ -217,12 +216,91 @@ export async function deleteOrg(orgSlug: string) {
       },
     });
 
-    await prisma.organizationStates.delete({
-      where: {
-        id: currentOrg.organizationStatesId ?? "",
+    return;
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+export async function patchOrg(
+  currentOrgSlug: string,
+  newOrg: { name: string; slug: string }
+) {
+  const currentOrg = await prisma.organization.findFirst({
+    where: {
+      slug: currentOrgSlug,
+    },
+    select: {
+      id: true,
+      name: true,
+    },
+  });
+
+  if (!currentOrg) throw new Error("Organization not found");
+
+  if (newOrg.name === currentOrg.name) return;
+
+  return prisma.organization.update({
+    where: {
+      id: currentOrg.id,
+    },
+    data: {
+      name: newOrg.name,
+      slug: newOrg.slug,
+    },
+  });
+}
+
+export async function createNewOrg(
+  user: UserCredentials & { firstName: string; lastName: string },
+  orgName: string,
+  orgSlug: string
+) {
+  try {
+    const currentUser = await findExistingUser(user);
+
+    if (!currentUser) {
+      await prisma.organization.create({
+        data: {
+          name: orgName,
+          slug: orgSlug,
+          states: {
+            create: {},
+          },
+          user: {
+            create: {
+              id: user.id,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              email: user.email,
+              plan: {
+                connectOrCreate: {
+                  where: { tier: "FREE" },
+                  create: { tier: "FREE" },
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return;
+    }
+
+    await prisma.organization.create({
+      data: {
+        name: orgName,
+        slug: orgSlug,
+        states: {
+          create: {},
+        },
+        user: {
+          connect: {
+            id: currentUser.id,
+          },
+        },
       },
     });
-
     return;
   } catch (error) {
     logAndThrow(error);
@@ -260,59 +338,59 @@ export async function loadPosition(parentOrg: string, currentPosition: string) {
   }
 }
 
-export async function createNewOrg(
-  user: UserCredentials & { firstName: string; lastName: string },
-  orgName: string,
-  orgSlug: string
+export async function patchOrgPosition(
+  parentOrgSlug: string,
+  currentPositionSlug: string,
+  newPosition: Partial<SinglePos>
 ) {
-  try {
-    const currentUser = await findExistingUser(user);
+  const currentPosition = await findExistingPosition(
+    parentOrgSlug,
+    currentPositionSlug
+  );
 
-    if (!currentUser) {
-      await prisma.organization.create({
-        data: {
-          name: orgName.toLocaleLowerCase(),
-          slug: orgSlug.toLocaleLowerCase(),
-          states: {
-            create: {},
-          },
-          user: {
-            create: {
-              id: user.id,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              email: user.email,
-              plan: {
-                connectOrCreate: {
-                  where: { tier: "FREE" },
-                  create: { tier: "FREE" },
-                },
-              },
-            },
-          },
-        },
-      });
+  if (!currentPosition) throw new Error("Position not found");
 
-      return;
-    }
+  const DEFAULT_TITLE_UPDATE_OBJ: Prisma.PositionUpdateArgs = {
+    where: {
+      slug: currentPositionSlug,
+    },
+    data: {
+      title: newPosition.title,
+      slug: newPosition.slug,
+    },
+  };
 
-    await prisma.organization.create({
-      data: {
-        name: orgName.toLocaleLowerCase(),
-        slug: orgSlug.toLocaleLowerCase(),
-        states: {
-          create: {},
-        },
-        user: {
-          connect: {
-            id: currentUser.id,
-          },
-        },
-      },
-    });
-    return;
-  } catch (error) {
-    logAndThrow(error);
+  const DEFAULT_DESC_UPDATE_OBJ: Prisma.PositionUpdateArgs = {
+    where: {
+      slug: currentPositionSlug,
+    },
+    data: {
+      description: newPosition.description,
+    },
+  };
+
+  const DEFAULT_START_DATE_UPDATE_OBJ: Prisma.PositionUpdateArgs = {
+    where: {
+      slug: currentPositionSlug,
+    },
+    data: {
+      monthStartedAt: newPosition.monthStartedAt,
+      yearStartedAt: newPosition.yearStartedAt,
+    },
+  };
+
+  switch (true) {
+    case !!newPosition.title && !!newPosition.slug:
+      return prisma.position.update(DEFAULT_TITLE_UPDATE_OBJ);
+
+    case !!newPosition.description:
+      return prisma.position.update(DEFAULT_DESC_UPDATE_OBJ);
+
+    case !!newPosition.monthStartedAt && !!newPosition.yearStartedAt:
+      return prisma.position.update(DEFAULT_START_DATE_UPDATE_OBJ);
+
+    default:
+      throw new Error("Unrecognized or invalid fields");
   }
 }
 
@@ -323,7 +401,7 @@ export async function createOrgPosition(
   try {
     const parentOrg = await prisma.organization.findUnique({
       where: {
-        slug: orgSlug.toLocaleLowerCase(),
+        slug: orgSlug,
       },
       select: {
         id: true,
@@ -339,8 +417,8 @@ export async function createOrgPosition(
     // TODO: convert this into a transaxtion
     await prisma.position.create({
       data: {
-        title: newPosition.title.toLocaleLowerCase(),
-        slug: newPosition.slug.toLocaleLowerCase(),
+        title: newPosition.title,
+        slug: newPosition.slug,
         description: newPosition.description ?? "",
         monthStartedAt: newPosition.timeline.month as Month,
         yearStartedAt: newPosition.timeline.year,
@@ -386,7 +464,7 @@ export async function loadOrgPositions(
 
     return prisma.organization.findUnique({
       where: {
-        slug: orgSlug.toLocaleLowerCase(),
+        slug: orgSlug,
       },
       select: {
         positions: {
@@ -425,7 +503,7 @@ export async function loadOrgStates(orgSlug: string) {
   try {
     return prisma.organization.findUnique({
       where: {
-        slug: orgSlug.toLocaleLowerCase(),
+        slug: orgSlug,
       },
       select: {
         states: {
@@ -447,9 +525,9 @@ export async function loadOrgStates(orgSlug: string) {
 function findExistingPosition(parentOrgSlug: string, positionSlug: string) {
   return prisma.position.findUnique({
     where: {
-      slug: positionSlug.toLocaleLowerCase(),
+      slug: positionSlug,
       organization: {
-        slug: parentOrgSlug.toLocaleLowerCase(),
+        slug: parentOrgSlug,
       },
     },
     select: {
@@ -532,7 +610,7 @@ export async function loadPositionBenchmarks(
         });
 
       default:
-        throw new Error("Unrecognized benchmarj");
+        throw new Error("Unrecognized benchmark");
     }
   } catch (error) {
     logAndThrow(error);
@@ -557,7 +635,7 @@ export async function loadBenchmark(
       case benchmarks.ACHIEVEMENTS:
         return prisma.achievement.findUniqueOrThrow({
           where: {
-            slug: payload.toLocaleLowerCase(),
+            slug: payload,
           },
           select: {
             title: true,
@@ -573,7 +651,7 @@ export async function loadBenchmark(
       case benchmarks.FAILURES:
         return prisma.failure.findUniqueOrThrow({
           where: {
-            slug: payload.toLocaleLowerCase(),
+            slug: payload,
           },
           select: {
             title: true,
@@ -589,7 +667,7 @@ export async function loadBenchmark(
       case benchmarks.PROJECTS:
         return prisma.project.findUniqueOrThrow({
           where: {
-            slug: payload.toLocaleLowerCase(),
+            slug: payload,
           },
           select: {
             title: true,
@@ -609,7 +687,7 @@ export async function loadBenchmark(
       case benchmarks.CHALLENGES:
         return prisma.challenge.findUniqueOrThrow({
           where: {
-            slug: payload.toLocaleLowerCase(),
+            slug: payload,
           },
           select: {
             title: true,
@@ -659,7 +737,7 @@ export async function createPositionBenchmark(
 
     const parentOrg = await prisma.organization.findUnique({
       where: {
-        slug: parentOrgSlug.toLocaleLowerCase(),
+        slug: parentOrgSlug,
       },
       select: {
         states: {
@@ -674,8 +752,8 @@ export async function createPositionBenchmark(
     });
 
     const defaults = {
-      title: payload.title.toLocaleLowerCase(),
-      slug: payload.slug.toLocaleLowerCase(),
+      title: payload.title,
+      slug: payload.slug,
       description: payload.description ?? "",
       createdAt: payload.createdAt,
       updatedAt: payload.updatedAt,
@@ -699,7 +777,7 @@ export async function createPositionBenchmark(
         if (!parentOrg?.states?.firstProjectCreated)
           await prisma.organization.update({
             where: {
-              slug: parentOrgSlug.toLocaleLowerCase(),
+              slug: parentOrgSlug,
             },
             data: {
               states: {
@@ -722,10 +800,10 @@ export async function createPositionBenchmark(
           },
         });
 
-        if (parentOrg?.states?.firstChallengeCreated)
+        if (!parentOrg?.states?.firstChallengeCreated)
           await prisma.organization.update({
             where: {
-              slug: parentOrgSlug.toLocaleLowerCase(),
+              slug: parentOrgSlug,
             },
             data: {
               states: {
@@ -743,15 +821,15 @@ export async function createPositionBenchmark(
         await prisma.failure.create({
           data: {
             ...defaults,
-            monthOccuredAt: payload.timeline.month as Month,
+            monthOccuredAt: payload.timeline.month.toLocaleUpperCase() as Month,
             yearOccuredAt: payload.timeline.year,
           },
         });
 
-        if (parentOrg?.states?.firstFailureCreated)
+        if (!parentOrg?.states?.firstFailureCreated)
           await prisma.organization.update({
             where: {
-              slug: parentOrgSlug.toLocaleLowerCase(),
+              slug: parentOrgSlug,
             },
             data: {
               states: {
@@ -774,10 +852,10 @@ export async function createPositionBenchmark(
           },
         });
 
-        if (parentOrg?.states?.firstAchievementCreated)
+        if (!parentOrg?.states?.firstAchievementCreated)
           await prisma.organization.update({
             where: {
-              slug: parentOrgSlug.toLocaleLowerCase(),
+              slug: parentOrgSlug,
             },
             data: {
               states: {
@@ -847,6 +925,127 @@ export async function deletePositionBenchmark(
         });
         break;
 
+      default:
+        break;
+    }
+
+    return;
+  } catch (error) {
+    logAndThrow(error);
+  }
+}
+
+type UpdateArgs =
+  | Prisma.AchievementUpdateArgs
+  | Prisma.ChallengeUpdateArgs
+  | Prisma.FailureUpdateArgs
+  | Prisma.ProjectUpdateArgs;
+type UpdateBenchmarkOpts = {
+  title?: string;
+  slug?: string;
+  description?: string;
+  monthStartedAt?: Month;
+  yearStartedAt?: number;
+  monthOccuredAt?: Month;
+  yearOccuredAt?: number;
+};
+export async function patchBenchmark(
+  parentOrgSlug: string,
+  positionSlug: string,
+  benchmarkCategory: z.infer<typeof queriedBenchmark>,
+  currentBenchmarkSlug: string,
+  {
+    title,
+    slug,
+    monthStartedAt,
+    yearStartedAt,
+    monthOccuredAt,
+    yearOccuredAt,
+    description,
+  }: UpdateBenchmarkOpts
+) {
+  try {
+    const position = await findExistingPosition(parentOrgSlug, positionSlug);
+    if (!position) throw new Error("Position not found");
+
+    const PATCH_TITLE_OBJ = {
+      where: {
+        slug: currentBenchmarkSlug,
+        positionId: position.id,
+      },
+      data: {
+        title: title ?? "",
+        slug: slug ?? "",
+      },
+    } satisfies UpdateArgs;
+
+    const PATCH_DESC_OBJ = {
+      where: {
+        slug: currentBenchmarkSlug,
+        positionId: position.id,
+      },
+      data: {
+        description: description ?? "",
+      },
+    } satisfies UpdateArgs;
+
+    const PATCH_PROJECT_TIMELINE_OBJ = {
+      where: {
+        slug: currentBenchmarkSlug,
+        positionId: position.id,
+      },
+      data: {
+        monthStartedAt: monthStartedAt ?? null,
+        yearStartedAt: yearStartedAt ?? null,
+      },
+    } satisfies UpdateArgs;
+
+    const PATCH_OTHER_BENCHMARK_TIMELINE_OBJ = {
+      where: {
+        slug: currentBenchmarkSlug,
+        positionId: position.id,
+      },
+      data: {
+        monthOccuredAt: monthOccuredAt ?? null,
+        yearOccuredAt: yearOccuredAt ?? null,
+      },
+    } satisfies UpdateArgs;
+
+    switch (benchmarkCategory) {
+      case benchmarks.ACHIEVEMENTS:
+        if (title) await prisma.achievement.update({ ...PATCH_TITLE_OBJ });
+        else if (description)
+          await prisma.achievement.update({ ...PATCH_DESC_OBJ });
+        else if (monthOccuredAt && yearOccuredAt)
+          await prisma.achievement.update({
+            ...PATCH_OTHER_BENCHMARK_TIMELINE_OBJ,
+          });
+        break;
+      case benchmarks.CHALLENGES:
+        if (title) await prisma.challenge.update({ ...PATCH_TITLE_OBJ });
+        else if (description)
+          await prisma.challenge.update({ ...PATCH_DESC_OBJ });
+        else if (monthOccuredAt && yearOccuredAt)
+          await prisma.challenge.update({
+            ...PATCH_OTHER_BENCHMARK_TIMELINE_OBJ,
+          });
+        break;
+      case benchmarks.FAILURES:
+        if (title) await prisma.failure.update({ ...PATCH_TITLE_OBJ });
+        else if (description)
+          await prisma.failure.update({ ...PATCH_DESC_OBJ });
+        else if (monthOccuredAt && yearOccuredAt)
+          await prisma.failure.update({
+            ...PATCH_OTHER_BENCHMARK_TIMELINE_OBJ,
+          });
+        break;
+      case benchmarks.PROJECTS:
+        if (title) await prisma.project.update({ ...PATCH_TITLE_OBJ });
+        else if (description)
+          await prisma.project.update({ ...PATCH_DESC_OBJ });
+        else if (monthStartedAt && yearStartedAt)
+          await prisma.project.update({ ...PATCH_PROJECT_TIMELINE_OBJ });
+        break;
       default:
         break;
     }
