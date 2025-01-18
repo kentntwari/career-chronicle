@@ -1,13 +1,15 @@
 <script lang="ts" setup>
   import type { OrgPos } from "~/types";
+
   import months from "~/constants/months";
+  import * as intents from "~/constants/intents";
 
   definePageMeta({
     middleware: ["protected"],
     layout: false,
   });
 
-  const positions = inject<Ref<OrgPos>>(
+  const positions = inject<Readonly<Ref<OrgPos>>>(
     resolveProvidedKeys().positions.all,
     () => ref([]),
     true
@@ -28,12 +30,21 @@
     return [...new Set(years)];
   });
 
-  const isDeleting = ref(false);
-  const targetedPosition = ref<string>("");
+  const isDelete = ref(false);
+  const isEdit = ref(false);
+  const currentPosition = ref<OrgPos[number]>();
 
-  function deletePosition(slug: string) {
-    isDeleting.value = true;
-    targetedPosition.value = slug;
+  function deletePosition(currentSlug: string) {
+    isDelete.value = true;
+    currentPosition.value = positions.value.find(
+      ({ slug }) => slug === currentSlug
+    );
+  }
+  function patchPosition(currentSlug: string) {
+    isEdit.value = true;
+    currentPosition.value = positions.value.find(
+      ({ slug }) => slug === currentSlug
+    );
   }
 
   function pushPosition(newPosition: OrgPos[number]) {
@@ -124,6 +135,12 @@
                       :parent-organization="
                         stringifyRoute(route.params.orgSlug)
                       "
+                      @edit="
+                        () => {
+                          patchPosition(position.slug);
+                          open();
+                        }
+                      "
                       @delete="
                         () => {
                           deletePosition(position.slug);
@@ -142,6 +159,12 @@
                         :parent-organization="
                           stringifyRoute(route.params.orgSlug)
                         "
+                        @edit="
+                          () => {
+                            patchPosition(position.slug);
+                            open();
+                          }
+                        "
                         @delete="
                           () => {
                             deletePosition(position.slug);
@@ -159,23 +182,51 @@
                   <visually-hidden
                     ><dialog-description></dialog-description
                   ></visually-hidden>
+                  <lazy-app-form-patch
+                    :data="{
+                      patchedSlug: currentPosition.slug,
+                      position: {
+                        title: currentPosition.title,
+                        timeline: {
+                          month: currentPosition.monthStartedAt,
+                          year: currentPosition.yearStartedAt,
+                        },
+                      },
+                    }"
+                    :intent="intents.EDIT_TITLE"
+                    :target="'POSITION'"
+                    :parent-org="stringifyRoute(route.params.orgSlug)"
+                    @update:patch="
+                      () => {
+                        isEdit = false;
+                        close();
+                      }
+                    "
+                    @cancel="
+                      () => {
+                        isEdit = false;
+                        close();
+                      }
+                    "
+                    v-if="isEdit && !!currentPosition"
+                  />
                   <lazy-app-form-delete
-                    :data="targetedPosition"
+                    :data="currentPosition.slug"
                     :target="'POSITION'"
                     :parent-org="stringifyRoute(route.params.orgSlug)"
                     @cancel="
                       () => {
-                        isDeleting = false;
+                        isDelete = false;
                         close();
                       }
                     "
                     @update:delete="
                       () => {
-                        isDeleting = false;
+                        isDelete = false;
                         close();
                       }
                     "
-                    v-if="isDeleting"
+                    v-else-if="isDelete && !!currentPosition"
                   />
                 </template>
               </ui-dialog>

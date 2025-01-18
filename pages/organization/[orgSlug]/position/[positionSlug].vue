@@ -1,5 +1,13 @@
 <script lang="ts" setup>
-  import type { SingleOrg, OrgPos, Benchmark } from "~/types";
+  import type {
+    SingleOrg,
+    OrgPos,
+    Benchmark,
+    Benchmarks,
+    BenchmarkState,
+    ProvidedBenchmarks,
+    SinglePos,
+  } from "~/types";
 
   import {
     Calendar as LucideCalendarIcon,
@@ -10,6 +18,8 @@
     TrendingDown as LucideTrendingDownIcon,
   } from "lucide-vue-next";
 
+  import { resolveProvidedKeys } from "~/utils/keys";
+  import * as intents from "~/constants/intents";
   import * as benchmarks from "~/constants/benchmarks";
   import * as routeNames from "~/constants/routeNames";
   import { DEFAULT_ORGANIZATION_OBJ } from "~/constants/defaults";
@@ -42,8 +52,39 @@
 
   const route = useRoute();
 
-  const { data, status, error, execute } = await useCurrentPosition();
+  const {
+    asyncData: { data, status, error },
+    shouldRefreshBenchmarksData,
+  } = await useCurrentPosition();
+
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
+
+  const t = ref<Benchmarks>([]);
+  watch(
+    () => data.value[1],
+    (val) => {
+      t.value = val;
+    }
+  );
+
+  provide<ProvidedBenchmarks>(resolveProvidedKeys().benchmarks.all, {
+    data: t,
+    getResourceIndex: (slug) => {
+      return data.value[1].findIndex((b) => b.slug === slug);
+    },
+    deleteBenchmark: (slug) => {
+      data.value[1] = data.value[1].filter(
+        (b) => b.slug !== slug
+      ) as Benchmarks;
+    },
+  });
+
+  provide<BenchmarkState>(resolveProvidedKeys().benchmarks.state, {
+    shouldRefresh: shouldRefreshBenchmarksData,
+    update: () => {
+      shouldRefreshBenchmarksData.value = true;
+    },
+  });
 
   const {
     activeBenchmark: currentBenchmark,
@@ -51,7 +92,89 @@
     bgClass: activeBgColorClass,
   } = useActiveBenchmark();
 
+  const isEditPositionTimeline = ref(false);
+  const isEditPositionDescription = ref(false);
+
   const addBenchmark = ref(false);
+
+  function resetPositionPatch() {
+    if (isEditPositionTimeline.value) isEditPositionTimeline.value = false;
+    else if (isEditPositionTimeline.value)
+      isEditPositionDescription.value = false;
+  }
+
+  type OptimisticUpdateIntents =
+    | "PATCH_POSITION"
+    | "CREATE_BENCHMARK"
+    | "DELETE_BENCHMARK";
+  type OptimisticUpdateOpts = {
+    position?: {
+      description?: string;
+      timeline?: Pick<SinglePos, "monthStartedAt" | "yearStartedAt">;
+    };
+    benchmark?: {
+      new?: Benchmarks[number];
+      deleted?: string;
+    };
+  };
+  function optimisticUpdate(
+    intent: OptimisticUpdateIntents,
+    opts: OptimisticUpdateOpts
+  ) {
+    if (intent === "DELETE_BENCHMARK" && !!opts?.benchmark?.deleted)
+      data.value[1] = data.value[1].filter(
+        (b) => b.slug !== opts?.benchmark?.deleted
+      ) as Benchmarks;
+    else if (intent === "CREATE_BENCHMARK" && !!opts?.benchmark?.new)
+      data.value[1].push({
+        ...opts?.benchmark?.new,
+        slug: opts?.benchmark?.new.slug,
+        monthStartedAt: null,
+        yearStartedAt: null,
+        monthOccuredAt: null,
+        yearOccuredAt: null,
+      });
+    else if (intent === "PATCH_POSITION" && !!opts?.position?.timeline)
+      data.value[0] = {
+        ...data.value[0],
+        monthStartedAt: opts?.position?.timeline?.monthStartedAt,
+        yearStartedAt: opts?.position?.timeline?.yearStartedAt,
+      };
+    else if (intent === "PATCH_POSITION" && !!opts?.position?.description)
+      data.value[0] = {
+        ...data.value[0],
+        description: opts?.position?.description,
+      };
+  }
+
+  const currentIntent = computed(() => {
+    if (isEditPositionTimeline.value) return intents.EDIT_TIMELINE;
+    else if (isEditPositionDescription.value) return intents.EDIT_DESCRIPTION;
+  });
+
+  const shouldOnboard = computed(() => {
+    if (
+      currentBenchmark.value === benchmarks.ACHIEVEMENTS &&
+      organization.value.hasCreatedAchievementBefore
+    )
+      return false;
+    else if (
+      currentBenchmark.value === benchmarks.FAILURES &&
+      organization.value.hasCreatedFailureBefore
+    )
+      return false;
+    else if (
+      currentBenchmark.value === benchmarks.CHALLENGES &&
+      organization.value.hasCreatedChallengeBefore
+    )
+      return false;
+    else if (
+      currentBenchmark.value === benchmarks.PROJECTS &&
+      organization.value.hasCreatedProjectBefore
+    )
+      return false;
+    else return true;
+  });
 
   const renderedComponent = computed(() =>
     resolveComponent("LazyAppFormBenchmark")
@@ -78,24 +201,93 @@
     <template #fallback>
       <app-skeleton-pageHeader target="POSITION" />
     </template>
-    <app-data-position-pageHeader
-      :data="positions"
-      :current="data[0].title"
-      :started-at="`${data[0].monthStartedAt.toLocaleLowerCase()} ${data[0].yearStartedAt}`"
-      :description="data[0].description ?? ''"
-      class="border border-neutral-grey-600"
-      @selected="
-        async (position) => {
-          return await navigateTo({
-            name: routeNames.CURRENT_POSITION,
-            params: {
-              orgSlug: route.params.orgSlug,
-              positionSlug: position,
+    <ui-dialog>
+      <template #trigger="{ open }">
+        <app-data-position-pageHeader
+          :data="positions"
+          :current="data[0].title"
+          :started-at="`${data[0].monthStartedAt.toLocaleLowerCase()} ${data[0].yearStartedAt}`"
+          :description="data[0].description ?? ''"
+          class="border border-neutral-grey-600"
+          @selected="
+            async (position) => {
+              return await navigateTo({
+                name: routeNames.CURRENT_POSITION,
+                params: {
+                  orgSlug: route.params.orgSlug,
+                  positionSlug: position,
+                },
+              });
+            }
+          "
+          @edit-description="
+            () => {
+              isEditPositionDescription = true;
+              open();
+            }
+          "
+          @edit-timeline="
+            () => {
+              isEditPositionTimeline = true;
+              open();
+            }
+          "
+        />
+      </template>
+      <template #default="{ close }">
+        <visually-hidden>
+          <dialog-title></dialog-title>
+        </visually-hidden>
+        <visually-hidden>
+          <dialog-description></dialog-description>
+        </visually-hidden>
+        <lazy-app-form-patch
+          :target="'POSITION'"
+          :intent="currentIntent"
+          :parent-org="stringifyRoute(route.params.orgSlug)"
+          :data="{
+            patchedSlug: stringifyRoute(route.params.positionSlug),
+            position: {
+              timeline: {
+                month: data[0].monthStartedAt,
+                year: data[0].yearStartedAt,
+              },
+              description: data[0].description ?? undefined,
             },
-          });
-        }
-      "
-    />
+          }"
+          @cancel="
+            () => {
+              resetPositionPatch();
+              close();
+            }
+          "
+          @update:patch="
+            (
+              data:
+                | string
+                | Pick<SinglePos, 'monthStartedAt' | 'yearStartedAt'>,
+              patchedSlug: string
+            ) => {
+              if (currentIntent === 'EDIT_DESCRIPTION')
+                optimisticUpdate('PATCH_POSITION', {
+                  position: { description: data as string },
+                });
+              else if (currentIntent === 'EDIT_TIMELINE')
+                optimisticUpdate('PATCH_POSITION', {
+                  position: {
+                    timeline: data as NonNullable<
+                      OptimisticUpdateOpts['position']
+                    >['timeline'],
+                  },
+                });
+
+              close();
+            }
+          "
+          v-if="!!currentIntent"
+        />
+      </template>
+    </ui-dialog>
   </client-only>
 
   <!-- TODO: Handle the case where data(positions) is null but not necessarily an error -->
@@ -161,8 +353,11 @@
               :benchmark="currentBenchmark"
               @cancel="close()"
               @form-submitted="
-                () => {
+                (data: Benchmarks[number]) => {
                   updateOrgBenchmarkState(b);
+                  optimisticUpdate('CREATE_BENCHMARK', {
+                    benchmark: { new: data },
+                  });
                   close();
                 }
               "
@@ -222,7 +417,14 @@
                 :parent-position="stringifyRoute(route.params.positionSlug)"
                 :benchmark="currentBenchmark"
                 @cancel="close()"
-                @form-submitted="close()"
+                @form-submitted="
+                  (data: Benchmarks[number]) => {
+                    optimisticUpdate('CREATE_BENCHMARK', {
+                      benchmark: { new: data },
+                    });
+                    close();
+                  }
+                "
               />
             </template>
           </ui-popover>
@@ -241,7 +443,8 @@
       </div>
     </client-only>
     <main
-      class="mt-12 pt-4 pb-5 w-full h-full bg-neutral-grey-500 flex-1 flex flex-col"
+      class="mt-12 pt-4 pb-5 w-full h-full flex-1 flex flex-col"
+      :class="[!shouldOnboard ? 'bg-neutral-grey-500' : '']"
     >
       <div
         class="container"
@@ -249,18 +452,38 @@
       >
         <app-skeleton-content class="px-3" />
       </div>
-      <div class="container" v-else>
+      <div class="container flex-1 grid" v-else>
         <ul
-          class="px-3 space-y-3"
+          class="px-3 h-full"
+          :class="[
+            shouldOnboard ? 'grid' : data[1].length > 0 ? 'space-y-3' : 'grid',
+          ]"
           v-show="route.name === routeNames.CURRENT_POSITION"
         >
-          <li v-for="benchmark in data[1]" :key="benchmark.slug">
+          <li v-show="shouldOnboard">
+            <app-data-benchmarks-onboarding
+              :currentBenchmark="currentBenchmark"
+            />
+          </li>
+
+          <li
+            v-for="benchmark in data[1]"
+            v-show="shouldOnboard === false && data[1].length > 0"
+            :key="benchmark.slug"
+          >
             <app-data-benchmarks-snippet
               :data="{ title: benchmark.title, slug: benchmark.slug }"
               :parent-organization="stringifyRoute(route.params.orgSlug)"
               :parent-position="stringifyRoute(route.params.positionSlug)"
               :parent-benchmark="currentBenchmark"
             />
+          </li>
+
+          <li
+            v-show="!shouldOnboard && data[1].length === 0"
+            class="w-fit m-auto"
+          >
+            No data found
           </li>
         </ul>
 

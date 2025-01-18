@@ -1,6 +1,8 @@
 <script setup lang="ts">
   import type { Orgs, SingleOrg } from "~/types";
 
+  import { EDIT_NAME } from "~/constants/intents";
+
   definePageMeta({
     middleware: ["protected"],
   });
@@ -27,21 +29,26 @@
       await $fetch("/api/user/first-time");
   });
 
-  const { data: organizations, status } = await useLazyFetch<Orgs>(
-    "/api/organizations",
-    {
-      key: "orgs",
-      getCachedData: (_key, nuxtApp) => {
-        if (!nuxtApp.payload.data.orgs) return;
-        return nuxtApp.payload.data.orgs;
-      },
-    }
-  );
+  const {
+    data: organizations,
+    status,
+    refresh,
+  } = await useLazyFetch<Orgs>("/api/organizations", {
+    key: "orgs",
+    getCachedData: (_key, nuxtApp) => {
+      if (!nuxtApp.payload.data.orgs) return;
+      return nuxtApp.payload.data.orgs;
+    },
+  });
 
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
 
   const isDeleting = ref(false);
-  const targetedOrg = ref<SingleOrg["slug"]>("");
+  const isPatching = ref(false);
+
+  provide<{ update: () => void }>(resolveProvidedKeys().organizations.state, {
+    update: () => refresh(),
+  });
 </script>
 
 <!-- TODO: Fix hydration mismatch -->
@@ -123,17 +130,26 @@
               No organizations created yet
             </p>
             <div class="flex flex-col gap-4" v-else>
-              <ui-dialog class="dialog-delete">
+              <ui-dialog
+                v-for="org in organizations"
+                :key="org.slug"
+                :class="[
+                  isDeleting ? 'dialog-delete' : '',
+                  isPatching ? 'min-h-48 rounded-t-lg' : '',
+                ]"
+              >
                 <template #trigger="{ open }">
                   <app-data-organization-snippet
-                    v-for="org in organizations"
                     :data="org"
-                    :key="org.slug"
-                    @edit="open()"
+                    @edit="
+                      () => {
+                        isPatching = true;
+                        open();
+                      }
+                    "
                     @delete="
                       () => {
                         isDeleting = true;
-                        targetedOrg = org.slug;
                         open();
                       }
                     "
@@ -147,7 +163,7 @@
                     ><dialog-description></dialog-description
                   ></visually-hidden>
                   <lazy-app-form-delete
-                    :data="targetedOrg"
+                    :data="org.slug"
                     :target="'ORGANIZATION'"
                     @cancel="
                       () => {
@@ -162,6 +178,24 @@
                       }
                     "
                     v-if="isDeleting"
+                  />
+                  <lazy-app-form-patch
+                    :intent="EDIT_NAME"
+                    :target="'ORGANIZATION'"
+                    :data="{ patchedSlug: org.slug, org: { name: org.name } }"
+                    @cancel="
+                      () => {
+                        isPatching = false;
+                        close();
+                      }
+                    "
+                    @update:patch="
+                      () => {
+                        isPatching = false;
+                        close();
+                      }
+                    "
+                    v-if="isPatching"
                   />
                 </template>
               </ui-dialog>

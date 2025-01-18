@@ -43,6 +43,14 @@
     }
   );
 
+  const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
+  const shouldLoadSkeleton = computed(() => {
+    if (!computedOrganization.value.hasCreatedPositionBefore) return false;
+    if (isLoading.value === "pending") return true;
+    if (isLoading.value !== "success" && data.value.length === 0) return true;
+    return false;
+  });
+
   watch(
     () => computedOrganization.value,
     (d) => {
@@ -54,13 +62,14 @@
     }
   );
 
-  const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
-
   provide(resolveProvidedKeys().organizations.current, {
     organization: computedOrganization,
     updateOrgBenchmarkState,
   });
   provide(resolveProvidedKeys().positions.all, readonly(data));
+  provide(resolveProvidedKeys().positions.state, {
+    update: () => execute(),
+  });
 </script>
 
 <template>
@@ -82,11 +91,10 @@
   </client-only>
 
   <div
-    v-if="
-      (status === 'pending' || isLoading === 'pending') &&
-      route.name === CURRENT_ORGANIZATION
-    "
+    v-if="shouldLoadSkeleton && route.name === CURRENT_ORGANIZATION"
+    class="container mt-4 px-3"
   >
+    <app-skeleton-banner />
     <app-skeleton-positions />
   </div>
 
