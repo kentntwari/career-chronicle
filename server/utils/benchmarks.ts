@@ -11,7 +11,7 @@ import {
   incomingNewTimelineMarkerBody,
 } from "~/utils/zschemas";
 
-export function getCacheKey(
+export function getSingleResourceCacheKey(
   userEmail: UserType["email"],
   parentOrganization: SingleOrg["slug"],
   parentPosition: SinglePos["slug"],
@@ -70,7 +70,7 @@ export function cacheBulkPayload(
   return benchmark === benchmarks.PROJECTS
     ? {
         title: data.title.toLocaleLowerCase(),
-        slug: data.slug.toLocaleLowerCase(),
+        slug: data.slug,
         monthStartedAt: data.timeline.month.toUpperCase() as Month,
         yearStartedAt: data.timeline.year,
         createdAt: NOW,
@@ -78,7 +78,7 @@ export function cacheBulkPayload(
       }
     : {
         title: data.title.toLocaleLowerCase(),
-        slug: data.slug.toLocaleLowerCase(),
+        slug: data.slug,
         monthOccuredAt: data.timeline.month.toUpperCase() as Month,
         yearOccuredAt: data.timeline.year,
         createdAt: NOW,
@@ -96,7 +96,7 @@ export function cacheBenchmarkPayload(
   )
     return {
       title: data.title.toLocaleLowerCase(),
-      slug: data.slug.toLocaleLowerCase(),
+      slug: data.slug,
       description: data.description?.toLocaleLowerCase() ?? null,
       monthOccuredAt: data.timeline.month.toUpperCase() as Month,
       yearOccuredAt: data.timeline.year,
@@ -107,7 +107,7 @@ export function cacheBenchmarkPayload(
   if (benchmark === benchmarks.PROJECTS)
     return {
       title: data.title.toLocaleLowerCase(),
-      slug: data.slug.toLocaleLowerCase(),
+      slug: data.slug,
       description: data.description?.toLocaleLowerCase() ?? null,
       monthStartedAt: data.timeline.month.toUpperCase() as Month,
       yearStartedAt: data.timeline.year,
@@ -122,7 +122,7 @@ export function cacheBenchmarkPayload(
   if (benchmark === benchmarks.CHALLENGES)
     return {
       title: data.title.toLocaleLowerCase(),
-      slug: data.slug.toLocaleLowerCase(),
+      slug: data.slug,
       description: data.description?.toLocaleLowerCase() ?? null,
       monthOccuredAt: data.timeline.month.toUpperCase() as Month,
       yearOccuredAt: data.timeline.year,
