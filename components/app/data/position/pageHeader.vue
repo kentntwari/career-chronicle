@@ -5,6 +5,7 @@
 
   import {
     X as LucideExitIcon,
+    FilePen as LucideFilePenIcon,
     MapPin as LucideMapPinIcon,
     ChevronRight as LucideChevronRightIcon,
     Info as LucideInfoIcon,
@@ -19,6 +20,8 @@
 
   const emit = defineEmits<{
     selected: [pos: OrgPos[number]["slug"]];
+    editTimeline: [void];
+    editDescription: [void];
   }>();
 
   const route = useRoute();
@@ -67,8 +70,8 @@
           side="bottom"
           :side-offset="10"
           :align-offset="0"
-          :align="width > 1024 ? 'start' : 'end'"
-          class="space-y-2"
+          :align="width > 1024 ? 'start' : 'center'"
+          class="max-w-[350px] space-y-2"
           v-if="!!startedAt || !!description"
         >
           <template #trigger="{ open }">
@@ -89,6 +92,48 @@
             >
               {{ !!description ? `${description}` : "No description provided" }}
             </small>
+          </template>
+        </ui-popover>
+
+        <ui-popover
+          side="bottom"
+          :side-offset="10"
+          class="flex flex-col items-start gap-4"
+        >
+          <template #trigger="{ open }">
+            <button type="button" @click="open()" class="pl-2">
+              <lucide-file-pen-icon
+                :size="20"
+                color="#3E4756"
+                stroke-width="3"
+              />
+            </button>
+          </template>
+          <template #content="{ close }">
+            <ui-button
+              variant="link"
+              size="link"
+              class="text-2xs underline underline-offset-4"
+              @click="
+                () => {
+                  emit('editTimeline');
+                  close();
+                }
+              "
+              >Edit timeline</ui-button
+            >
+            <ui-button
+              variant="link"
+              size="link"
+              class="text-2xs underline underline-offset-4"
+              @click="
+                () => {
+                  emit('editDescription');
+                  close();
+                }
+              "
+              >Edit Description</ui-button
+            >
           </template>
         </ui-popover>
       </div>
