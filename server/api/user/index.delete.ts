@@ -15,17 +15,15 @@ export default defineEventHandler(async (event) => {
 
     const p = redis.pipeline();
 
-    // delete user from redis
     const keys = await redis.keys(`*user:${user.email.toLocaleLowerCase()}*`);
     if (keys.length) p.del(...keys);
 
     await Promise.all([
       p.exec(),
-      // delete user from db
+
       deleteUser({ id: user.id, email: user.email }),
     ]);
 
-    // delete user from kinde
     $fetch("/api/v1/user", {
       method: "DELETE",
       baseURL: process.env.NUXT_KINDE_M2M_DOMAIN,
