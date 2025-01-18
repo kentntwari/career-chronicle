@@ -1,7 +1,7 @@
 import type { SinglePos, Benchmarks, BenchmarkPayload } from "~/types";
 
 import * as benchmarks from "~/constants/benchmarks";
-import { CURRENT_BENCHMARK } from "~/constants/routeNames";
+import { CURRENT_BENCHMARK, CURRENT_POSITION } from "~/constants/routeNames";
 import * as k from "~/utils/keys";
 
 export type PositionResponse = [SinglePos, Benchmarks, BenchmarkPayload | null];
@@ -36,8 +36,8 @@ const fetchCurrentBenchmark = (
 export function useCurrentPosition() {
   const route = useRoute();
 
-  const posKey = k.resolvePos(stringifyRoute(route.params.positionSlug));
-  const allBenchmarksCacheKey = k.resolveAllPosBenchmarks(
+  let posKey = k.resolvePos(stringifyRoute(route.params.positionSlug));
+  let allBenchmarksCacheKey = k.resolveAllPosBenchmarks(
     stringifyRoute(route.params.positionSlug),
     route.name === CURRENT_BENCHMARK
       ? stringifyRoute(route.params.benchmark)
@@ -45,20 +45,20 @@ export function useCurrentPosition() {
         ? stringifyRoute(route.query.benchmark)
         : benchmarks.ACHIEVEMENTS
   );
-  const benchmarkCacheKey = k.resolvePosBenchmark(
+  let benchmarkCacheKey = k.resolvePosBenchmark(
     stringifyRoute(route.params.positionSlug),
     stringifyRoute(route.query.v)
   );
 
-  const { data: cachedPositionData } = useNuxtData<SinglePos>(posKey);
-  const { data: cachedBenchmarksData } = useNuxtData<Benchmarks>(
-    allBenchmarksCacheKey
-  );
-  const { data: cachedBenchmarkPayloadData } =
-    useNuxtData<BenchmarkPayload>(benchmarkCacheKey);
-
   const asyncData = useLazyAsyncData<PositionResponse>(
     async () => {
+      const { data: cachedPositionData } = useNuxtData<SinglePos>(posKey);
+      const { data: cachedBenchmarksData } = useNuxtData<Benchmarks>(
+        allBenchmarksCacheKey
+      );
+      const { data: cachedBenchmarkPayloadData } =
+        useNuxtData<BenchmarkPayload>(benchmarkCacheKey);
+
       const [position, benchmarks, currentBenchmark] = await Promise.all([
         !cachedPositionData.value
           ? fetchCurrentPosition(
@@ -125,20 +125,79 @@ export function useCurrentPosition() {
     }
   );
 
+  const shouldRefreshPositionData = ref(false);
+  const shouldRefreshBenchmarksData = ref(false);
+  const shouldRefreshBenchmarkPayloadData = ref(false);
+
   watch(
     [
       () => route.params.positionSlug,
       () => route.params.benchmark,
       () => route.query.benchmark,
       () => route.query.v,
-      () => cachedBenchmarksData.value,
     ],
-    ([a, b, c, d, e]) => {
-      if (!e) asyncData.refresh();
-      else asyncData.execute();
+    ([
+      currentPositionParam,
+      currentBenchmarkParam,
+      currentBenchmarkQuery,
+      currentBenchmarkPayload,
+    ]) => {
+      if (route.name === CURRENT_POSITION) {
+        posKey = k.resolvePos(
+          stringifyRoute(stringifyRoute(currentPositionParam))
+        );
+      }
+
+      if (route.name === CURRENT_BENCHMARK) {
+        allBenchmarksCacheKey = k.resolveAllPosBenchmarks(
+          stringifyRoute(currentPositionParam),
+          stringifyRoute(currentBenchmarkParam ?? benchmarks.ACHIEVEMENTS)
+        );
+      }
+
+      if (route.name === CURRENT_POSITION) {
+        allBenchmarksCacheKey = k.resolveAllPosBenchmarks(
+          stringifyRoute(currentPositionParam),
+          stringifyRoute(currentBenchmarkQuery ?? benchmarks.ACHIEVEMENTS)
+        );
+      }
+
+      if (route.name === CURRENT_BENCHMARK) {
+        benchmarkCacheKey = k.resolvePosBenchmark(
+          stringifyRoute(currentPositionParam),
+          stringifyRoute(currentBenchmarkPayload)
+        );
+      }
+
+      asyncData.execute();
     },
     { immediate: true }
   );
 
-  return asyncData;
+  watchEffect(() => {
+    if (shouldRefreshPositionData.value) {
+      clearNuxtData(posKey);
+      asyncData.refresh();
+      shouldRefreshPositionData.value = false;
+    }
+
+    if (shouldRefreshBenchmarksData.value) {
+      clearNuxtData(allBenchmarksCacheKey);
+      asyncData.refresh();
+      shouldRefreshBenchmarksData.value = false;
+    }
+
+    if (shouldRefreshBenchmarkPayloadData.value) {
+      clearNuxtData(benchmarkCacheKey);
+      asyncData.refresh();
+      shouldRefreshBenchmarkPayloadData.value = false;
+    }
+  });
+
+  return {
+    asyncData,
+    shouldRefreshPositionData,
+    shouldRefreshBenchmarksData,
+    shouldRefreshBenchmarkPayloadData,
+  };
 }
