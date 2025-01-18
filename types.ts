@@ -61,3 +61,12 @@ export type BenchmarkPayload =
   | Omit<Achievement | Failure, "id" | "positionId">
   | Omit<Project, "id" | "positionId">
   | Omit<Challenge, "id" | "positionId">;
+export type BenchmarkState = {
+  shouldRefresh: Ref<boolean>;
+  update: () => void;
+};
+export type ProvidedBenchmarks = {
+  data: Ref<Benchmarks>;
+  getResourceIndex: (slug: string) => number | undefined;
+  deleteBenchmark: (slug: string) => void;
+};
