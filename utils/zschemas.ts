@@ -8,20 +8,6 @@ export const userCredentials = z.object({
   email: z.string().email(),
 });
 
-export const deleteSchema = z.object({
-  slug: z.string(),
-  parentOrg: z
-    .object({
-      slug: z.string(),
-    })
-    .optional(),
-  parentPosition: z
-    .object({
-      slug: z.string(),
-    })
-    .optional(),
-});
-
 export const newOrg = z.object({
   name: z
     .string({
@@ -199,3 +185,112 @@ export const queriedBenchmark = z.preprocess(
     z.literal(benchmarks.CHALLENGES),
   ])
 );
+
+export const deleteSchema = z.object({
+  slug: z.string().min(13, { message: "Not a valid slug" }),
+  parentOrg: z
+    .object({
+      slug: z.string(),
+    })
+    .optional(),
+  parentPosition: z
+    .object({
+      slug: z.string(),
+    })
+    .optional(),
+});
+
+export const patchSchema = z.object({
+  slug: z.object({
+    current: z.string().min(13, { message: "Not  a valid slug" }),
+    new: z.string().min(13, { message: "Not a valid slug" }),
+  }),
+  org: newOrg.optional(),
+  position: z
+    .object({
+      title: z.string().max(150, { message: "Must not exceed 150 characters" }),
+      description: z
+        .string()
+        .max(500, { message: "Must not exceed 500 characters" }),
+      timeline: z
+        .object({
+          month: z
+            .string({ required_error: "Must select a month" })
+            .transform((val) => val.toLocaleUpperCase())
+            .superRefine((val, ctx) => {
+              if (!months.map((m) => m.toUpperCase()).includes(val))
+                ctx.addIssue({
+                  code: "custom",
+                  message: "Must be a valid month",
+                });
+            }),
+          year: z
+            .number({
+              message: "Must be between 1950 and " + getYear(new Date()),
+            })
+            .min(1950, { message: "The earliest can only be 1950" })
+            .max(getYear(new Date()), {
+              message: "The latest can only be " + getYear(new Date()),
+            }),
+        })
+        .partial(),
+    })
+    .partial()
+    .optional(),
+  benchmark: z
+    .object({
+      title: z
+        .string()
+        .min(1)
+        .max(150, { message: "Must not exceed 150 characters" }),
+      description: z
+        .string()
+        .max(500, { message: "Must not exceed 500 characters" }),
+      generalTimeline: z.object({
+        month: z
+          .string({ required_error: "Must select a month" })
+          .transform((val) => val.toLocaleUpperCase())
+          .superRefine((val, ctx) => {
+            if (!months.map((m) => m.toUpperCase()).includes(val))
+              ctx.addIssue({
+                code: "custom",
+                message: "Must be a valid month",
+              });
+          }),
+        year: z
+          .number({
+            message: "Must be between 1950 and " + getYear(new Date()),
+          })
+          .min(1950, { message: "The earliest can only be 1950" })
+          .max(getYear(new Date()), {
+            message: "The latest can only be " + getYear(new Date()),
+          }),
+      }),
+      projectTimeline: z.object({
+        month: z
+          .string({ required_error: "Must select a month" })
+          .transform((val) => val.toLocaleUpperCase())
+          .superRefine((val, ctx) => {
+            if (!months.map((m) => m.toUpperCase()).includes(val))
+              ctx.addIssue({
+                code: "custom",
+                message: "Must be a valid month",
+              });
+          }),
+        year: z
+          .number({
+            message:
+              "Must be between " +
+              getYear(new Date()) +
+              " and " +
+              (getYear(new Date()) + 50),
+          })
+          .min(getYear(new Date()), { message: "Cannot be in the past" })
+          .max(getYear(new Date()) + 50, {
+            message: "Must not exceed 50 years from now",
+          }),
+      }),
+    })
+    .partial()
+    .optional(),
+});
