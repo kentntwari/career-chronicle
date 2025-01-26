@@ -57,21 +57,21 @@
 <template>
   <main>
     <section class="container">
-      <div class="w-full mt-4 px-3 container">
+      <div class="w-full mt-4 xl:mt-6 px-3 container">
         <app-data-plan-banner
           :target="'POSITIONS'"
           :current-count="positions.length"
-          class="mb-14"
+          class="mb-14 xl:mb-[7.5rem]"
         />
 
         <p v-if="positions.length === 0">No positions found</p>
 
         <template v-else>
           <section
-            class="min-h-9 h-fit border-b border-neutral-grey-600"
+            class="xl:nested-container min-h-9 h-fit xl:h-[50px] border-b border-neutral-grey-600"
             :class="[route.query.organize ? 'pb-6' : '']"
           >
-            <h1 class="font-bold text-md">
+            <h1 class="font-bold text-md xl:text-xl">
               Positions
               <span class="inherit" v-show="!route.query.organize">
                 ({{ positions.length }})
@@ -123,57 +123,28 @@
               </span>
             </h1>
           </section>
-          <div class="mt-6 space-y-8">
+          <div class="xl:nested-container mt-6 space-y-8">
             <div class="min-h-40 flex flex-col gap-4">
               <ui-dialog class="dialog-delete">
                 <template #trigger="{ open }">
-                  <template v-if="!route.query.organize">
-                    <app-data-position-snippet
-                      v-for="position in positions"
-                      :data="position"
-                      :key="position.slug"
-                      :parent-organization="
-                        stringifyRoute(route.params.orgSlug)
-                      "
-                      @edit="
-                        () => {
-                          patchPosition(position.slug);
-                          open();
-                        }
-                      "
-                      @delete="
-                        () => {
-                          deletePosition(position.slug);
-                          open();
-                        }
-                      "
-                    />
-                  </template>
-
-                  <app-data-positions-organized :initial="positions" v-else>
-                    <template #default="{ organizedData }">
-                      <app-data-position-snippet
-                        v-for="position in organizedData"
-                        :data="position"
-                        :key="position.slug"
-                        :parent-organization="
-                          stringifyRoute(route.params.orgSlug)
-                        "
-                        @edit="
-                          () => {
-                            patchPosition(position.slug);
-                            open();
-                          }
-                        "
-                        @delete="
-                          () => {
-                            deletePosition(position.slug);
-                            open();
-                          }
-                        "
-                      />
-                    </template>
-                  </app-data-positions-organized>
+                  <app-data-position-snippet
+                    v-for="position in positions"
+                    :data="position"
+                    :key="position.slug"
+                    :parent-organization="stringifyRoute(route.params.orgSlug)"
+                    @edit="
+                      () => {
+                        patchPosition(position.slug);
+                        open();
+                      }
+                    "
+                    @delete="
+                      () => {
+                        deletePosition(position.slug);
+                        open();
+                      }
+                    "
+                  />
                 </template>
                 <template #default="{ close }">
                   <visually-hidden>
@@ -233,7 +204,9 @@
             </div>
           </div>
         </template>
-        <div class="flex flex-col-reverse items-start gap-y-6">
+        <div
+          class="xl:nested-container flex flex-col-reverse items-start gap-y-6"
+        >
           <ui-button
             :variant="'link'"
             :size="'link'"

@@ -7,10 +7,15 @@
   } from "~/types";
 
   import { format } from "date-fns";
+  import { useWindowSize, whenever } from "@vueuse/core";
 
   import {
+    Trash2 as LucideTrash2Icon,
+    PenLine as LucidePenLineIcon,
     MoveLeft as LucideMoveLeftIcon,
     Ellipsis as LucideEllipsisIcon,
+    ChevronLeft as LucideChevronLeftIcon,
+    ChevronRight as LucideChevronRightIcon,
   } from "lucide-vue-next";
 
   import { CURRENT_BENCHMARK, CURRENT_POSITION } from "~/constants/routeNames";
@@ -60,6 +65,16 @@
     },
   });
 
+  const isDescriptionNotFound = computed(() => {
+    if (!payload.value.description) return true;
+    if (payload.value.description.trim() === "") return true;
+    return false;
+  });
+
+  const { width } = useWindowSize();
+
+  const triggerRef = useTemplateRef("trigger");
+
   const route = useRoute();
   const currentBenchmark = stringifyRoute(
     route.params.benchmark
@@ -73,6 +88,15 @@
       deleteBenchmark: () => {},
     },
     true
+  );
+
+  whenever(
+    () => width.value > 1024 && !!triggerRef.value,
+    (val) => {
+      if (triggerRef.value) {
+        triggerRef.value.$el.click();
+      }
+    }
   );
 
   const formattedDate = computed(() => {
@@ -120,6 +144,34 @@
         : payload.value,
     };
   }
+  async function goToPrevious() {
+    const previous = skip().previous.slug;
+    return await navigateTo({
+      name: CURRENT_BENCHMARK,
+      params: {
+        orgSlug: stringifyRoute(route.params.orgSlug),
+        positionSlug: stringifyRoute(route.params.positionSlug),
+        benchmark: stringifyRoute(route.params.benchmark),
+      },
+      query: {
+        v: previous,
+      },
+    });
+  }
+  async function goToNext() {
+    const next = skip().next.slug;
+    return await navigateTo({
+      name: CURRENT_BENCHMARK,
+      params: {
+        orgSlug: stringifyRoute(route.params.orgSlug),
+        positionSlug: stringifyRoute(route.params.positionSlug),
+        benchmark: stringifyRoute(route.params.benchmark),
+      },
+      query: {
+        v: next,
+      },
+    });
+  }
 
   type PatchTarget = "title" | "description";
   function startPatching(target: PatchTarget) {
@@ -144,13 +196,19 @@
       payload.value.description = data;
     }
   }
+
+  function preventClosingDropdown(event: Event) {
+    if (width.value > 1024) event.preventDefault();
+  }
 </script>
 
 <template>
-  <div class="px-3 h-full flex flex-col lg:grid">
-    <div class="w-full max-h-6 flex items-center justify-between">
+  <div
+    class="px-3 h-full flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-[auto_1fr_minmax(0,0.4fr)] lg:gap-y-6"
+  >
+    <div class="w-full max-h-6 lg:contents">
       <button
-        class="text-neutral-grey-1000"
+        class="lg:col-start-1 lg:col-span-2 lg:self-start text-neutral-grey-1000"
         @click="
           async () =>
             await navigateTo({
@@ -164,6 +222,7 @@
       >
         <LucideMoveLeftIcon :size="24" />
       </button>
+
       <ui-dialog
         :class="[
           isDeleting ? 'dialog-delete' : '',
@@ -171,19 +230,95 @@
         ]"
       >
         <template #trigger="{ open }">
+          <div
+            class="hidden lg:block lg:col-span-2 lg:space-y-2 lg:justify-self-end"
+          >
+            <dropdown-menu-root>
+              <dropdown-menu-trigger as-child>
+                <ui-button
+                  variant="neutral"
+                  class="h-9 block pointer-events-auto"
+                >
+                  <lucide-pen-line-icon :size="20" />
+                </ui-button>
+              </dropdown-menu-trigger>
+              <dropdown-menu-portal>
+                <dropdown-menu-content
+                  :side="'left'"
+                  :side-offset="4"
+                  class="min-w-24 min-h-12 px-3 py-[5px] bg-[#fff] rounded-md *:h-8 *:flex *:justify-start *:items-center *:text-sm *:text-neutral-grey-1000 *:cursor-pointer"
+                >
+                  <dropdown-menu-item
+                    @select="
+                      () => {
+                        startPatching('title');
+                        open();
+                      }
+                    "
+                    >Edit title</dropdown-menu-item
+                  >
+                  <dropdown-menu-item
+                    @select="
+                      () => {
+                        startPatching('description');
+                        open();
+                      }
+                    "
+                    >Edit description</dropdown-menu-item
+                  >
+                </dropdown-menu-content>
+              </dropdown-menu-portal>
+            </dropdown-menu-root>
+
+            <ui-button
+              variant="neutral"
+              class="h-9 block pointer-events-auto"
+              @click="
+                () => {
+                  isDeleting = true;
+                  open();
+                }
+              "
+            >
+              <lucide-trash-2-icon :size="20" />
+            </ui-button>
+            <ui-button
+              variant="neutral"
+              class="h-9 block pointer-events-auto"
+              @click="goToPrevious()"
+            >
+              <lucide-chevron-left-icon :size="20" />
+            </ui-button>
+            <ui-button
+              variant="neutral"
+              class="h-9 block pointer-events-auto"
+              @click="goToNext()"
+            >
+              <lucide-chevron-right-icon :size="20" />
+            </ui-button>
+          </div>
           <dropdown-menu-root>
-            <dropdown-menu-trigger>
-              <LucideEllipsisIcon :size="24" />
+            <dropdown-menu-trigger
+              ref="trigger"
+              class="float-right lg:float-none lg:col-span-2 lg:self-start lg:justify-self-end lg:flex lg:flex-col lg:gap-y-1.5"
+            >
+              <LucideEllipsisIcon
+                :size="24"
+                class="lg:h-0 lg:invisible lg:pointer-events-none"
+              />
             </dropdown-menu-trigger>
             <dropdown-menu-portal>
               <dropdown-menu-content
                 :align="'end'"
                 :align-offset="0"
-                class="p-[5px] *:py-1.5 min-w-28 min-h-16 bg-[#fff] rounded-lg text-sm text-neutral-grey-1000 shadow-md"
+                class="lg:space-y-2 p-[5px] lg:*:p-0 lg:*:w-[44px] lg:*:h-9 min-w-28 min-h-16 bg-[#fff] lg:*:bg-[#fff] lg:bg-opacity-0 rounded-lg lg:*:rounded-md text-sm text-neutral-grey-1000 shadow-md lg:shadow-none"
+                @interact-outside="preventClosingDropdown($event)"
               >
                 <dropdown-menu-item
+                  class="lg:hidden"
                   @select="
-                    () => {
+                    (e) => {
+                      preventClosingDropdown(e);
                       startPatching('title');
                       open();
                     }
@@ -191,8 +326,10 @@
                   >Edit title</dropdown-menu-item
                 >
                 <dropdown-menu-item
+                  class="lg:hidden"
                   @select="
-                    () => {
+                    (e) => {
+                      preventClosingDropdown(e);
                       startPatching('description');
                       open();
                     }
@@ -200,51 +337,30 @@
                   >Edit description</dropdown-menu-item
                 >
                 <dropdown-menu-item
+                  class="lg:hidden"
                   @select="
-                    async () => {
-                      const next = skip().next.slug;
-                      await navigateTo({
-                        name: CURRENT_BENCHMARK,
-                        params: {
-                          orgSlug: stringifyRoute(route.params.orgSlug),
-                          positionSlug: stringifyRoute(
-                            route.params.positionSlug
-                          ),
-                          benchmark: stringifyRoute(route.params.benchmark),
-                        },
-                        query: {
-                          v: next,
-                        },
-                      });
+                    async (e) => {
+                      preventClosingDropdown(e);
+                      goToNext();
                     }
                   "
                   >Go to next</dropdown-menu-item
                 >
                 <dropdown-menu-item
+                  class="lg:hidden"
                   @select="
-                    async () => {
-                      const previous = skip().previous.slug;
-                      await navigateTo({
-                        name: CURRENT_BENCHMARK,
-                        params: {
-                          orgSlug: stringifyRoute(route.params.orgSlug),
-                          positionSlug: stringifyRoute(
-                            route.params.positionSlug
-                          ),
-                          benchmark: stringifyRoute(route.params.benchmark),
-                        },
-                        query: {
-                          v: previous,
-                        },
-                      });
+                    async (e) => {
+                      preventClosingDropdown(e);
+                      goToPrevious();
                     }
                   "
                   >Go to previous</dropdown-menu-item
                 >
                 <dropdown-menu-item
-                  class="text-danger-900"
+                  class="lg:hidden text-danger-900"
                   @select="
-                    () => {
+                    (e) => {
+                      preventClosingDropdown(e);
                       isDeleting = true;
                       open();
                     }
@@ -334,20 +450,25 @@
       </ui-dialog>
     </div>
 
-    <h1 class="mt-4 font-semibold text-lg" :class="[titleClass]">
+    <h1
+      class="mt-4 lg:mt-0 lg:col-start-3 lg:row-start-1 lg:col-span-8 lg:max-w-[64rem] font-semibold text-lg"
+      :class="[titleClass]"
+    >
       {{ payload.title }}
     </h1>
     <p
-      class="mt-4 flex-1 font-regular"
+      class="mt-4 lg:mt-0 lg:col-start-3 lg:col-span-8 lg:max-w-[64rem] flex-1 font-regular"
       :class="[
         payload.description
           ? 'text-neutral-grey-1300'
           : 'italic text-neutral-grey-900',
       ]"
     >
-      {{ payload.description ?? "No description found" }}
+      {{ isDescriptionNotFound ? "No description found" : payload.description }}
     </p>
-    <p class="font-regular text-sm text-neutral-grey-1000">
+    <p
+      class="lg:col-start-3 lg:col-span-8 lg:max-w-[64rem] font-regular text-sm text-neutral-grey-1000"
+    >
       <span class="block">Created: {{ formattedDate.createdAt }}</span>
       <span class="block">Last modified: {{ formattedDate.updatedAt }}</span>
     </p>

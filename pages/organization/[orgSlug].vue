@@ -9,8 +9,6 @@
     layout: false,
   });
 
-  const nuxtApp = useNuxtApp();
-
   const route = useRoute();
 
   const cachedOrgs = useNuxtData<Orgs>("orgs");
@@ -29,23 +27,44 @@
     updateOrgPositionState,
   } = useCurrentOrganization();
 
-  const pk = resolveOrgPositions(stringifyRoute(route.params.orgSlug));
-  const { data, status, error, execute } = await useLazyAsyncData<OrgPos>(
-    pk,
+  const computedMonthQuery = computed(() => {
+    const parsed = organizePositionsByMonth.safeParse(route.query.month);
+    if (!!parsed.success) return parsed.data;
+    return null;
+  });
+
+  const computedYearQuery = computed(() => {
+    const parsed = organizePositionsByYear.safeParse(
+      +(route.query.year ?? "0")
+    );
+
+    if (!!parsed.success) return parsed.data;
+    return null;
+  });
+
+  const { data, status, error, execute } = useLazyAsyncData<OrgPos>(
     () =>
       useRequestFetch()<OrgPos>(`${route.params.orgSlug}/positions`, {
         baseURL: "/api/organization",
+        query: {
+          month: !!computedMonthQuery.value
+            ? computedMonthQuery.value
+            : undefined,
+          year: !!computedYearQuery.value ? computedYearQuery.value : undefined,
+        },
       }),
     {
       immediate: false,
       deep: false,
       default: () => [],
+      watch: [computedMonthQuery, computedYearQuery],
     }
   );
 
   const { isLoading } = useDebouncedLoading(status, { minLoadingTime: 250 });
   const shouldLoadSkeleton = computed(() => {
     if (!computedOrganization.value.hasCreatedPositionBefore) return false;
+    if (isLoading.value === "error") return false;
     if (isLoading.value === "pending") return true;
     if (isLoading.value !== "success" && data.value.length === 0) return true;
     return false;
@@ -54,8 +73,7 @@
   watch(
     () => computedOrganization.value,
     (d) => {
-      if (nuxtApp.payload.data[pk]) data.value = nuxtApp.payload.data[pk];
-      else if (d.hasCreatedPositionBefore && d.name !== "") execute();
+      if (d.hasCreatedPositionBefore && d.name !== "") execute();
     },
     {
       immediate: true,

@@ -443,21 +443,18 @@
       </div>
     </client-only>
     <main
-      class="mt-12 pt-4 pb-5 w-full h-full flex-1 flex flex-col"
+      class="mt-12 w-full h-full flex-1 flex flex-col"
       :class="[!shouldOnboard ? 'bg-neutral-grey-500' : '']"
     >
       <div
-        class="container"
+        class="mt-4 container"
         v-if="status === 'pending' || isLoading === 'pending'"
       >
         <app-skeleton-content class="px-3" />
       </div>
       <div class="container flex-1 grid" v-else>
         <ul
-          class="px-3 h-full"
-          :class="[
-            shouldOnboard ? 'grid' : data[1].length > 0 ? 'space-y-3' : 'grid',
-          ]"
+          class="px-3 mt-4 h-full flex xl:grid flex-col xl:grid-flow-col gap-3"
           v-show="route.name === routeNames.CURRENT_POSITION"
         >
           <li v-show="shouldOnboard">
@@ -487,7 +484,10 @@
           </li>
         </ul>
 
-        <section v-show="route.name === routeNames.CURRENT_BENCHMARK">
+        <section
+          v-show="route.name === routeNames.CURRENT_BENCHMARK"
+          class="py-4 lg:pt-8 lg:pb-6"
+        >
           <NuxtPage :page-key="(route) => route.fullPath" :data="data[2]" />
         </section>
       </div>

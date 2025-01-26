@@ -57,7 +57,7 @@
 <template>
   <main
     class="container px-2"
-    :class="`${!isCookieNotBoolean && isFirstTimeUser ? 'mt-[4.5rem]' : 'mt-4'} `"
+    :class="`${!isCookieNotBoolean && isFirstTimeUser ? 'mt-[4.5rem]' : 'mt-4 xl:mt-6'} `"
     data-allow-mismatch
   >
     <div
@@ -115,16 +115,21 @@
           <app-data-plan-banner
             :target="'ORGANIZATIONS'"
             :current-count="organizations?.length ?? '??'"
-            class="mb-14"
+            class="mb-14 xl:mb-[7.5rem]"
           />
 
-          <div class="h-9 border-b border-neutral-grey-600">
-            <h1 class="capitalize font-bold text-md">
+          <div
+            class="nested-container h-9 xl:h-[50px] border-b border-neutral-grey-600"
+          >
+            <h1 class="capitalize font-bold text-md xl:text-xl">
               Organizations ({{ organizations?.length }})
             </h1>
           </div>
 
-          <div class="space-y-8" v-show="isLoading !== 'pending'">
+          <div
+            class="nested-container space-y-8"
+            v-show="isLoading !== 'pending'"
+          >
             <p v-if="!organizations">No organizations found</p>
             <p v-else-if="organizations.length === 0">
               No organizations created yet
