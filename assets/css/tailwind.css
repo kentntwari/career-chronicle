@@ -14,15 +14,21 @@
   }
 }
 
+@layer components {
+  .nested-container {
+    @apply xl:min-w-[60vw] xl:max-w-[1066px] xl:mx-auto;
+  }
+}
+
 @layer utilities {
   .banner {
-    @apply w-full bg-info-bg/15 px-3 py-[10px] space-y-4 rounded-lg;
+    @apply xl:flex xl:items-center xl:justify-between w-full bg-info-bg/15 px-3 py-[10px] space-y-4 xl:space-y-0 rounded-lg;
   }
   .banner-title {
-    @apply font-normal text-sm text-info-text text-pretty;
+    @apply font-normal text-sm xl:text-base text-info-text text-pretty;
   }
   .banner-footer {
-    @apply block font-medium text-sm text-neutral-grey-1300 text-balance;
+    @apply block font-medium text-sm xl:text-base text-neutral-grey-1300 text-balance;
   }
 
   .dialog-content {
@@ -30,6 +36,6 @@
   }
 
   .dialog-delete {
-    @apply w-96 min-h-0 h-40 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-lg;
+    @apply md:w-96 min-h-0 h-40 md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 rounded-t-lg md:rounded-lg;
   }
 }
