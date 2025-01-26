@@ -204,6 +204,7 @@
 
 <template>
   <div
+    id="benchmark-container"
     class="px-3 h-full flex flex-col lg:grid lg:grid-cols-12 lg:grid-rows-[auto_1fr_minmax(0,0.4fr)] lg:gap-y-6"
   >
     <div class="w-full max-h-6 lg:contents">
@@ -232,6 +233,7 @@
         <template #trigger="{ open }">
           <div
             class="hidden lg:block lg:col-span-2 lg:space-y-2 lg:justify-self-end"
+            v-if="width > 1024"
           >
             <dropdown-menu-root>
               <dropdown-menu-trigger as-child>
@@ -242,7 +244,7 @@
                   <lucide-pen-line-icon :size="20" />
                 </ui-button>
               </dropdown-menu-trigger>
-              <dropdown-menu-portal>
+              <dropdown-menu-portal :to="'#benchmark-container'">
                 <dropdown-menu-content
                   :side="'left'"
                   :side-offset="4"
@@ -297,7 +299,7 @@
               <lucide-chevron-right-icon :size="20" />
             </ui-button>
           </div>
-          <dropdown-menu-root>
+          <dropdown-menu-root v-else>
             <dropdown-menu-trigger
               ref="trigger"
               class="float-right lg:float-none lg:col-span-2 lg:self-start lg:justify-self-end lg:flex lg:flex-col lg:gap-y-1.5"
@@ -307,7 +309,7 @@
                 class="lg:h-0 lg:invisible lg:pointer-events-none"
               />
             </dropdown-menu-trigger>
-            <dropdown-menu-portal>
+            <dropdown-menu-portal :to="'#benchmark-container'">
               <dropdown-menu-content
                 :align="'end'"
                 :align-offset="0"
