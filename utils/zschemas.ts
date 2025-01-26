@@ -153,6 +153,7 @@ export const queryByMonthOrYear = z.object({
   ),
   year: z
     .string()
+    .nullish()
     .superRefine((val, ctx) => {
       if (!val) return;
       const year = parseInt(val);
