@@ -142,6 +142,9 @@
         <span class="md:hidden">
           <lucide-exit-icon :size="20" color="#3E4756" stroke-width="3" />
         </span>
+        <span class="hidden md:block uppercase text-neutral-grey-1300"
+          >Exit</span
+        >
       </nuxt-link>
     </div>
   </header>
