@@ -6,7 +6,6 @@
 
   definePageMeta({
     middleware: ["protected"],
-    layout: false,
   });
 
   const route = useRoute();
@@ -25,6 +24,7 @@
     organization: computedOrganization,
     updateOrgBenchmarkState,
     updateOrgPositionState,
+    error: organizationNotFoundError,
   } = useCurrentOrganization();
 
   const computedMonthQuery = computed(() => {
@@ -42,7 +42,12 @@
     return null;
   });
 
-  const { data, status, error, execute } = useLazyAsyncData<OrgPos>(
+  const {
+    data,
+    status,
+    error: positionsError,
+    execute,
+  } = useLazyAsyncData<OrgPos>(
     () =>
       useRequestFetch()<OrgPos>(`${route.params.orgSlug}/positions`, {
         baseURL: "/api/organization",
@@ -98,6 +103,7 @@
     <app-data-organization-pageHeader
       :current="computedOrganization.name"
       :data="allOrgs"
+      :class="[organizationNotFoundError ? 'hidden' : '']"
       @selected="
         async (o) =>
           await navigateTo({
@@ -108,17 +114,40 @@
     />
   </client-only>
 
+  <app-error-organization-notFound
+    v-if="organizationNotFoundError"
+    :organization="stringifyRoute(route.params.orgSlug)"
+    :allOrgs="allOrgs"
+    class="mt-[4.5rem]"
+  />
+
   <div
-    v-if="shouldLoadSkeleton && route.name === CURRENT_ORGANIZATION"
+    v-else-if="shouldLoadSkeleton && route.name === CURRENT_ORGANIZATION"
     class="container mt-4 px-3"
   >
     <app-skeleton-banner />
     <app-skeleton-positions />
   </div>
 
-  <!-- TODO: Better UI for errors -->
-  <div v-else-if="isLoading === 'error'">
-    <small>{{ error }}</small>
+  <div
+    class="container nested-container mt-[120px]"
+    v-else-if="isLoading === 'error'"
+  >
+    <app-error-no-data :error="positionsError" @reload="execute()">
+      <template #default="{ code, handleReload }">
+        <ui-button
+          variant="link"
+          @click="
+            () =>
+              code === 404
+                ? clearError({ redirect: '/organizations' })
+                : handleReload()
+          "
+          class="mt-12 lg:mt-14"
+          >{{ code === 404 ? "Go back to organizations" : "Reload" }}</ui-button
+        >
+      </template>
+    </app-error-no-data>
   </div>
 
   <!-- TODO:Handle the case when the data is null but not necessarily an error -->

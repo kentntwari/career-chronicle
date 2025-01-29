@@ -47,9 +47,12 @@
     <div class="container flex items-center justify-between">
       <div class="flex items-center space-x-1">
         <figure
-          class="w-8 h-8 bg-[#3E4756] flex justify-center items-center rounded-lg"
+          class="xl:p-2 w-8 xl:w-32 h-8 xl:space-x-2 bg-[#3E4756] flex justify-center xl:justify-start items-center rounded-lg"
         >
           <lucide-map-pin-icon :size="20" color="white" />
+          <span class="hidden xl:block text-neutral-grey-100 text-sm"
+            >Position</span
+          >
         </figure>
         <figure class="px-1">
           <lucide-chevron-right-icon

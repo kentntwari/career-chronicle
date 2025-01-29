@@ -26,7 +26,6 @@
 
   definePageMeta({
     middleware: ["protected"],
-    layout: false,
   });
 
   interface TransformedSingleOrg extends SingleOrg {
@@ -53,7 +52,7 @@
   const route = useRoute();
 
   const {
-    asyncData: { data, status, error },
+    asyncData: { data, status, error, execute },
     shouldRefreshBenchmarksData,
   } = await useCurrentPosition();
 
@@ -66,25 +65,6 @@
       t.value = val;
     }
   );
-
-  provide<ProvidedBenchmarks>(resolveProvidedKeys().benchmarks.all, {
-    data: t,
-    getResourceIndex: (slug) => {
-      return data.value[1].findIndex((b) => b.slug === slug);
-    },
-    deleteBenchmark: (slug) => {
-      data.value[1] = data.value[1].filter(
-        (b) => b.slug !== slug
-      ) as Benchmarks;
-    },
-  });
-
-  provide<BenchmarkState>(resolveProvidedKeys().benchmarks.state, {
-    shouldRefresh: shouldRefreshBenchmarksData,
-    update: () => {
-      shouldRefreshBenchmarksData.value = true;
-    },
-  });
 
   const {
     activeBenchmark: currentBenchmark,
@@ -194,6 +174,25 @@
         return "";
     }
   };
+
+  provide<ProvidedBenchmarks>(resolveProvidedKeys().benchmarks.all, {
+    data: t,
+    getResourceIndex: (slug) => {
+      return data.value[1].findIndex((b) => b.slug === slug);
+    },
+    deleteBenchmark: (slug) => {
+      data.value[1] = data.value[1].filter(
+        (b) => b.slug !== slug
+      ) as Benchmarks;
+    },
+  });
+
+  provide<BenchmarkState>(resolveProvidedKeys().benchmarks.state, {
+    shouldRefresh: shouldRefreshBenchmarksData,
+    update: () => {
+      shouldRefreshBenchmarksData.value = true;
+    },
+  });
 </script>
 
 <template>
@@ -209,6 +208,7 @@
           :started-at="`${data[0].monthStartedAt.toLocaleLowerCase()} ${data[0].yearStartedAt}`"
           :description="data[0].description ?? ''"
           class="border border-neutral-grey-600"
+          :class="[error.notFound.position.value ? 'hidden' : '']"
           @selected="
             async (position) => {
               return await navigateTo({
@@ -290,11 +290,28 @@
     </ui-dialog>
   </client-only>
 
-  <!-- TODO: Handle the case where data(positions) is null but not necessarily an error -->
-  <!-- TODO: Better UI for errors -->
-  <div v-if="status === 'error'">
-    <small>{{ error }}</small>
+  <!-- {{ error }} -->
+
+  <div
+    class="container nested-container mt-[7.5rem]"
+    v-if="error.notFound.position.value"
+  >
+    <app-error-position-notFound
+      :position="stringifyRoute(route.params.positionSlug)"
+      :parent-organization="stringifyRoute(route.params.orgSlug)"
+      :all-positions="positions"
+    />
   </div>
+
+  <div
+    v-else-if="
+      isLoading === 'error' && route.name === routeNames.CURRENT_POSITION
+    "
+    class="container nested-container mt-[7.5rem]"
+  >
+    <app-error-no-data @reload="execute()" />
+  </div>
+
   <div
     v-else-if="!organization.hasCreatedBenchmark"
     class="mt-[4.5rem] px-3 container text-balance font-medium"
@@ -485,7 +502,10 @@
         </ul>
 
         <section
-          v-show="route.name === routeNames.CURRENT_BENCHMARK"
+          v-show="
+            !error.notFound.benchmark.value &&
+            route.name === routeNames.CURRENT_BENCHMARK
+          "
           class="py-4 lg:pt-8 lg:pb-6"
         >
           <NuxtPage :page-key="(route) => route.fullPath" :data="data[2]" />

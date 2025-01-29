@@ -1,5 +1,8 @@
 import type { Benchmark, SingleOrg } from "~/types";
 
+import { H3Error } from "h3";
+import { FetchError } from "ofetch";
+
 import * as benchmarks from "~/constants/benchmarks";
 import { DEFAULT_ORGANIZATION_OBJ } from "~/constants/defaults";
 
@@ -11,6 +14,7 @@ interface UseCurrentOrganization {
   organization: ComputedRef<OrganizationResponse>;
   updateOrgPositionState: () => void;
   updateOrgBenchmarkState: (benchmark: Benchmark) => void;
+  error: Ref<boolean> | null;
 }
 
 export function useCurrentOrganization(): UseCurrentOrganization {
@@ -20,6 +24,8 @@ export function useCurrentOrganization(): UseCurrentOrganization {
   const organization = useState<SingleOrg>(k, () => ({
     ...DEFAULT_ORGANIZATION_OBJ,
   }));
+
+  const notFoundError = ref(false);
 
   const computedOrganization = computed<OrganizationResponse>(() => {
     if (
@@ -32,15 +38,26 @@ export function useCurrentOrganization(): UseCurrentOrganization {
 
     return { ...organization.value, hasCreatedBenchmark: false };
   });
-  // FIX: find way to initiate the fetch on the server to prevent flicker
+  // FIX: initiate the fetch on the server to prevent flicker
   watchEffect(async () => {
-    if (organization.value.name === "")
-      organization.value = await useRequestFetch()<SingleOrg>(
-        `${route.params.orgSlug}`,
-        {
-          baseURL: "/api/organization",
-        }
-      );
+    try {
+      if (organization.value.name === "")
+        organization.value = await useRequestFetch()<SingleOrg>(
+          `${route.params.orgSlug}`,
+          {
+            baseURL: "/api/organization",
+          }
+        );
+    } catch (error) {
+      // TODO: handle multiple error states/codes
+      if (error instanceof FetchError && error.statusCode === 404)
+        notFoundError.value = true;
+      else
+        throw createError({
+          statusCode: 500,
+          fatal: true,
+        });
+    }
   });
 
   function updateOrgPositionState() {
@@ -64,5 +81,6 @@ export function useCurrentOrganization(): UseCurrentOrganization {
     organization: computedOrganization,
     updateOrgPositionState,
     updateOrgBenchmarkState,
+    error: notFoundError,
   };
 }

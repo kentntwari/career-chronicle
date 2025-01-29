@@ -51,7 +51,6 @@ export default defineEventHandler(async (event) => {
         return filterPositionsByQueryParams(dbOrg.positions, parsedQuery.data);
     }
   } catch (error) {
-    console.log(error);
     throwError(error);
   }
 });

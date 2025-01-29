@@ -47,7 +47,6 @@
           });
       },
     ],
-    layout: false,
   });
 
   const props = defineProps<{

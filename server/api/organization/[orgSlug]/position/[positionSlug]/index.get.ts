@@ -5,6 +5,7 @@ import * as authorize from "@/server/utils/authorize";
 import { resolveUserPos } from "~/utils/keys";
 import { loadPosition } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
+import { errorMessages } from "~/server/utils/errors";
 
 export default defineEventHandler(async (event) => {
   const { kinde } = await allowAuthorizedKindeUser(event);
@@ -33,7 +34,7 @@ export default defineEventHandler(async (event) => {
   if (!dbPosition)
     throw createError({
       statusCode: 404,
-      statusMessage: "Not found",
+      statusMessage: errorMessages.POSITION_NOT_FOUND,
     });
 
   await redis.hset(

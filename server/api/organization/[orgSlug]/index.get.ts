@@ -6,6 +6,7 @@ import { resolveUserOrg } from "~/utils/keys";
 import { loadOrg } from "~/server/utils/db";
 import { validateParams } from "~/server/utils/params";
 
+// TODO: return tuple for better error handling
 export default defineEventHandler(async (event) => {
   try {
     const { kinde } = await allowAuthorizedKindeUser(event);
@@ -37,7 +38,6 @@ export default defineEventHandler(async (event) => {
 
     return dbOrg;
   } catch (error) {
-    console.log(error);
     throwError(error);
   }
 });

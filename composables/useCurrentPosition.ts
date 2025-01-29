@@ -1,15 +1,21 @@
 import type { SinglePos, Benchmarks, BenchmarkPayload } from "~/types";
 
+import { H3Error } from "h3";
+import { FetchError } from "ofetch";
+
 import * as benchmarks from "~/constants/benchmarks";
 import { CURRENT_BENCHMARK, CURRENT_POSITION } from "~/constants/routeNames";
 import * as k from "~/utils/keys";
+import { errorMessages } from "~/server/utils/errors";
 
 export type PositionResponse = [SinglePos, Benchmarks, BenchmarkPayload | null];
 
 const BASE_URL = "/api/organization";
 
 const fetchCurrentPosition = (org: string, pos: string) =>
-  useRequestFetch()<SinglePos>(`${org}/position/${pos}`, { baseURL: BASE_URL });
+  useRequestFetch()<SinglePos>(`${org}/position/${pos}`, {
+    baseURL: BASE_URL,
+  });
 
 const fetchAllBenchmarks = (org: string, pos: string, benchmark: string) =>
   useRequestFetch()<Benchmarks>(`${org}/position/${pos}/benchmarks`, {
@@ -35,6 +41,10 @@ const fetchCurrentBenchmark = (
 // FIX: should be able to use watch async option directly instead of a watcher
 export function useCurrentPosition() {
   const route = useRoute();
+
+  const positionNotFoundError = ref(false);
+  const benchmarksNotFoundError = ref(false);
+  const currentBenchMarkNotFoundError = ref(false);
 
   let posKey = k.resolvePos(stringifyRoute(route.params.positionSlug));
   let allBenchmarksCacheKey = k.resolveAllPosBenchmarks(
@@ -174,6 +184,39 @@ export function useCurrentPosition() {
     { immediate: true }
   );
 
+  watch(
+    () => asyncData.error.value,
+    (error) => {
+      switch (true) {
+        case error instanceof FetchError || error instanceof H3Error:
+          if (
+            error.statusCode === 404 &&
+            error.statusMessage === errorMessages.POSITION_NOT_FOUND
+          )
+            positionNotFoundError.value = true;
+          else if (
+            error.statusCode === 404 &&
+            error.statusMessage === errorMessages.BENCHMARKS_NOT_FOUND
+          ) {
+            // TODO: handle error at the benchmark level instead of throwing full screen error to preserve UI
+            benchmarksNotFoundError.value = true;
+            showError({ statusCode: 404 });
+          } else if (
+            error.statusCode === 404 &&
+            error.statusMessage === errorMessages.BENCHMARK_NOT_FOUND
+          ) {
+            // TODO: Handle error at the benchmark level instead of throwing full screen error to preserve UI
+
+            currentBenchMarkNotFoundError.value = true;
+            showError({ statusCode: 404 });
+          }
+          break;
+        default:
+          return error;
+      }
+    }
+  );
+
   watchEffect(() => {
     if (shouldRefreshPositionData.value) {
       clearNuxtData(posKey);
@@ -195,7 +238,17 @@ export function useCurrentPosition() {
   });
 
   return {
-    asyncData,
+    asyncData: {
+      ...asyncData,
+      error: {
+        raw: asyncData.error,
+        notFound: {
+          position: positionNotFoundError,
+          benchmarks: benchmarksNotFoundError,
+          benchmark: currentBenchMarkNotFoundError,
+        },
+      },
+    },
     shouldRefreshPositionData,
     shouldRefreshBenchmarksData,
     shouldRefreshBenchmarkPayloadData,

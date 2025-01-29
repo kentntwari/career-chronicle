@@ -6,7 +6,6 @@
 
   definePageMeta({
     middleware: ["protected"],
-    layout: false,
   });
 
   const positions = inject<Readonly<Ref<OrgPos>>>(

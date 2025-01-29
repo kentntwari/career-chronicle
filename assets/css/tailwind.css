@@ -18,6 +18,9 @@
   .nested-container {
     @apply xl:min-w-[60vw] xl:max-w-[1066px] xl:mx-auto;
   }
+  .error-container {
+    @apply w-full bg-neutral-grey-500 p-6 lg:p-10 lg:min-h-64 rounded-lg;
+  }
 }
 
 @layer utilities {

@@ -32,6 +32,7 @@
   const {
     data: organizations,
     status,
+    error,
     refresh,
   } = await useLazyFetch<Orgs>("/api/organizations", {
     key: "orgs",
@@ -51,9 +52,6 @@
   });
 </script>
 
-<!-- TODO: Fix hydration mismatch -->
-<!--  Should be able to apply proper styles and  classes -->
-<!-- without having to resort to ClientOnly component -->
 <template>
   <main
     class="container px-2"
@@ -110,8 +108,12 @@
 
       <template v-else>
         <app-skeleton-content v-show="isLoading === 'pending'" />
-
-        <section class="space-y-6" v-show="isLoading !== 'pending'">
+        <app-error-no-data
+          class="nested-container mt-12 lg:mt-[120px]"
+          @reload="refresh()"
+          v-show="isLoading !== 'pending' && error"
+        />
+        <section class="space-y-6" v-show="isLoading !== 'pending' && !error">
           <app-data-plan-banner
             :target="'ORGANIZATIONS'"
             :current-count="organizations?.length ?? '??'"
