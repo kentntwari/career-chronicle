@@ -5,6 +5,7 @@
 @layer base {
   :root {
     --site-background: 240deg 3% 93%;
+    --site-landing-page: 270deg 10% 4%;
     --top-navigation-background: 216deg 43% 95%;
     --info-background: 216deg 43% 66%;
     --logo: 216deg 43% 50%;
@@ -24,6 +25,9 @@
 }
 
 @layer utilities {
+  .logo {
+    @apply relative font-bold text-md xl:text-xl text-logo before:content-['ALPHA'] before:absolute before:-top-2 before:-right-6 before:font-medium before:text-3xs before:text-[#1751D0];
+  }
   .banner {
     @apply xl:flex xl:items-center xl:justify-between w-full bg-info-bg/15 px-3 py-[10px] space-y-4 xl:space-y-0 rounded-lg;
   }
