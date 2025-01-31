@@ -1,7 +1,5 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 
-import type { NuxtPage } from "nuxt/schema";
-
 export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   app: {
@@ -35,18 +33,19 @@ export default defineNuxtConfig({
   modules: [
     "@nuxtjs/tailwindcss",
     "@nuxtjs/kinde",
+    "@nuxt/image",
     "radix-vue/nuxt",
     "@vee-validate/nuxt",
     "@nuxtjs/html-validator",
+    "nuxt-svgo",
   ],
-
   tailwindcss: {
     // cssPath: "~/assets/css/tailwind.css",
     config: {
       theme: {
         screens: {
           sm: "640px",
-          md: "768px",
+          md: "744px",
           lg: "1024px",
           xl: "1280px",
           "2xl": "1536px",
@@ -83,76 +82,77 @@ export default defineNuxtConfig({
           sm: [
             "0.875rem",
             {
-              lineHeight: "1.375rem",
-              letterSpacing: "-0.2px",
+              lineHeight: "1.25rem",
+              letterSpacing: "-0.003125em",
             },
           ],
           base: [
             "1rem",
             {
-              lineHeight: "1.625rem",
-              letterSpacing: "-0.2px",
+              lineHeight: "1.375rem",
+              letterSpacing: "-0.01125em",
             },
           ],
           md: [
             "1.125rem",
             {
-              lineHeight: "1.75rem",
-              letterSpacing: "-0.2px",
+              lineHeight: "1.5rem",
+              letterSpacing: "-0.01625em",
             },
           ],
           lg: [
             "1.25rem",
             {
               lineHeight: "1.75rem",
-              letterSpacing: "-0.2px",
+              letterSpacing: "-0.02em",
             },
           ],
           xl: [
             "1.5rem",
             {
               lineHeight: "2rem",
-              letterSpacing: "-0.3px",
+              letterSpacing: "-0.03em",
             },
           ],
           "2xl": [
             "2rem",
             {
               lineHeight: "2.5rem",
-              letterSpacing: "-0.3px",
+              letterSpacing: "-0.03em",
             },
           ],
           "3xl": [
             "2.25rem",
             {
               lineHeight: "2.75rem",
-              letterSpacing: "-0.3px",
+              letterSpacing: "-0.03em",
             },
           ],
           "4xl": [
             "3rem",
             {
               lineHeight: "4.5rem",
-              letterSpacing: "-0.3px",
+              letterSpacing: "-0.03em",
             },
           ],
           "5xl": [
             "3.75rem",
             {
               lineHeight: "5.625rem",
-              letterSpacing: "-0.3px",
+              letterSpacing: "-0.03em",
             },
           ],
           "6xl": [
             "4.375rem",
             {
               lineHeight: "6.75rem",
-              letterSpacing: "-0.3px",
+              letterSpacing: "-0.03em",
             },
           ],
         },
         colors: {
           site: "hsl(var(--site-background))",
+          "landing-page": "hsl(var(--site-landing-page))",
           "top-nav": "hsl(var(--top-navigation-background))",
           logo: "hsl(var(--logo))",
           body: "hsl(var(--body))",
@@ -271,5 +271,8 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+  svgo: {
+    autoImportPath: "~/assets/svg/",
   },
 });

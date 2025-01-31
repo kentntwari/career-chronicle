@@ -5,7 +5,6 @@
     title: "Career Journey",
     htmlAttrs: {
       lang: "en",
-      class: "bg-site",
     },
     bodyAttrs: {
       class: "font-body text-base text-body",
@@ -17,7 +16,7 @@
   const route = useRoute();
 
   await callOnce(async () => {
-    if (useNuxtApp().$auth.loggedIn && route.path !== "/") {
+    if (useNuxtApp().$auth.loggedIn) {
       plan.value = await useRequestFetch()<Plan>("/api/user/plan");
     }
   });

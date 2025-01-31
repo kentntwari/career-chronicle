@@ -21,7 +21,7 @@
 <template>
   <component
     :is="as"
-    :class="cn(b.variants({ variant, size }), $attrs.class ?? '')"
+    :class="cn(b.variants({ variant, size }))"
     :type="$attrs.type ?? 'button'"
     v-bind="$attrs"
   >

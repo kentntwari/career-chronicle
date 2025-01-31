@@ -1,4 +1,8 @@
-<script lang="ts" setup></script>
+<script lang="ts" setup>
+  useHead({
+    htmlAttrs: { class: "bg-site" },
+  });
+</script>
 
 <template>
   <div class="min-h-screen min-h-[100dvh] flex flex-col">
