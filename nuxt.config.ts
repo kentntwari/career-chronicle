@@ -4,7 +4,72 @@ export default defineNuxtConfig({
   compatibilityDate: "2024-04-03",
   app: {
     head: {
+      meta: [
+        {
+          name: "description",
+          content:
+            "Manage your diverse career path effortlessly. Track projects, skills, and achievements across different roles to stay organized and ready for new opportunities.",
+        },
+        {
+          name: "keywords",
+          content:
+            "career, path, tracking, management, skills, projects, achievements, tracking, milestones, growth, productivity, work, career path, career tracking, career management, career skills, career projects, career achievements, career milestones, career growth, productivity tools, productivity tool, professional history, work achievements, work history software, CV updates",
+        },
+        {
+          name: "robots",
+          content: "index, follow",
+        },
+        {
+          name: "application-name",
+          content: "Career Chronicle",
+        },
+        {
+          name: "author",
+          content: "Kent Ntwari",
+        },
+        {
+          property: "og:title",
+          content: "Career Chronicle",
+        },
+        {
+          property: "og:description",
+          content: "Easily track your career path, skills, and achievements.",
+        },
+        {
+          property: "og:url",
+          content: "https://careerchronicle.space",
+        },
+        {
+          property: "og:image",
+          content:
+            "h1ttps://ik.imagekit.io/2rtor9l9w/CareerChronicle/CareerChronicle-og.png",
+        },
+        {
+          name: "twitter:card",
+          content: "summary_large_image",
+        },
+        {
+          name: "twitter:title",
+          content: "Career Chronicle",
+        },
+        {
+          name: "twitter:description",
+          content: "Easily track your career path, skills, and achievements.",
+        },
+        {
+          name: "twitter:image",
+          content:
+            "https://ik.imagekit.io/2rtor9l9w/CareerChronicle/CareerChronicle-og.png",
+        },
+      ],
+      htmlAttrs: {
+        lang: "en",
+      },
       link: [
+        {
+          rel: "canonical",
+          href: "https://careerchronicle.space",
+        },
         {
           rel: "stylesheet",
           href: "https://rsms.me/inter/inter.css",
@@ -12,8 +77,9 @@ export default defineNuxtConfig({
       ],
     },
   },
-  // TODO: define middlewares for pages here
-  // above nitro, in the hooks
+  routeRules: {
+    "/": { prerender: true },
+  },
   nitro: {
     storage: {
       data: { driver: "vercelKV", ttl: 60 * 60 * 24 * 30 },

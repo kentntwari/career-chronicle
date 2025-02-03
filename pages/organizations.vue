@@ -7,17 +7,6 @@
     middleware: ["protected"],
   });
 
-  useHead({
-    title: "Organizations",
-    meta: [
-      {
-        name: "description",
-        content:
-          "Manage and record your organizations at different phases of your career",
-      },
-    ],
-  });
-
   const isFirstTimeUser = useCookie<boolean>("isFirstTime");
   const isCookieNotBoolean = computed(() => {
     if (typeof isFirstTimeUser.value !== "boolean") return true;
@@ -53,6 +42,13 @@
 </script>
 
 <template>
+  <Head>
+    <Title>Organizations</Title>
+    <Meta
+      name="description"
+      content="Manage and record your organizations at different phases of your career"
+    />
+  </Head>
   <main
     class="container px-2"
     :class="`${!isCookieNotBoolean && isFirstTimeUser ? 'mt-[4.5rem]' : 'mt-4 xl:mt-6'} `"

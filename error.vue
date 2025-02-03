@@ -1,19 +1,11 @@
 <script setup lang="ts">
   const err = useError();
-
-  useHead({
-    title: "Error",
-    htmlAttrs: {
-      lang: "en",
-      class: "bg-site",
-    },
-    bodyAttrs: {
-      class: "font-body text-base text-body",
-    },
-  });
 </script>
 
 <template>
+  <Head>
+    <Title>Error</Title>
+  </Head>
   <NuxtLayout>
     <main class="container mt-[4.5rem] lgmt-60">
       <div class="nested-container px-3 lg:px-0">

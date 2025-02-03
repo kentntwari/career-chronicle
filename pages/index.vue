@@ -7,9 +7,6 @@
 
   useHead({
     title: "Get Started | Career Journey",
-    htmlAttrs: {
-      lang: "en",
-    },
   });
 
   const { width: windowWidthSize } = useWindowSize();

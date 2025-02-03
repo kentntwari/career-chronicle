@@ -96,6 +96,9 @@
 </script>
 
 <template>
+  <Head>
+    <Title>{{ computedOrganization.name }}</Title>
+  </Head>
   <client-only>
     <template #fallback>
       <app-skeleton-pageHeader target="ORGANIZATION" />
