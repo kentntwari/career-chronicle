@@ -68,7 +68,7 @@ export default defineNuxtConfig({
       link: [
         {
           rel: "canonical",
-          href: "https://careerchronicle.space",
+          href: "https://careerchronicle.space/",
         },
         {
           rel: "stylesheet",
@@ -79,6 +79,8 @@ export default defineNuxtConfig({
   },
   routeRules: {
     "/": { prerender: true },
+    "/terms-and-conditions": { prerender: true },
+    "/privacy-policy": { prerender: true },
   },
   nitro: {
     storage: {
