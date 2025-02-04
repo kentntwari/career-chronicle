@@ -3,11 +3,7 @@
 
   definePageMeta({
     layout: "home",
-  });
-
-  useHead({
-    title: "Get Started | Career Journey",
-  });
+  });;
 
   const { width: windowWidthSize } = useWindowSize();
 
