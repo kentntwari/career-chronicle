@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap-image/1.1">
+    <url>
+        <loc>https://www.careerchronicle.space/</loc>
+        <lastmod>2025-02-04</lastmod>
+        <changefreq>quartely</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://www.yourwebsite.com/terms-and-conditions</loc>
+        <lastmod>2025-02-04</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://www.yourwebsite.com/privacy-policy</loc>
+        <lastmod>2025-02-04</lastmod>
+        <changefreq>yearly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <!-- Add more URLs as needed -->
+</urlset>
