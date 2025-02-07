@@ -1,4 +1,4 @@
-<h1 align="center" style="font-size: 2.5em;">
+<h1 style="font-size: 2.5em;">
   🚀 Career Chronicle
 </h1>
 
