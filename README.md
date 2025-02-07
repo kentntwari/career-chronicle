@@ -1,75 +1,14 @@
-# Nuxt 3 Minimal Starter
+<h1 align="center" style="font-size: 2.5em;">
+  🚀 Career Chronicle
+</h1>
 
-Look at the [Nuxt 3 documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+> ⚠️ **Alpha Stage:** This product is still in its early development phase and may undergo significant changes.  
 
-## Setup
+## 📌 About the Project  
+This platform is a **career tracking and productivity tool** that helps individuals document their professional journey. Users can log past and current organizations, track job roles, and record key milestones such as achievements, challenges, and projects—all in one place.  
 
-Make sure to install the dependencies:
-
-```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
-npm run dev
-
-# pnpm
-pnpm run dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm run build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm run preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+## 🛠 Tech Stack  
+- **Frontend:** Nuxt.js, Vue.js, TypeScript  
+- **Backend:** Prisma, Upstash, NeonDB
+- **Auth:** Kinde  
+- **Deployment:** Vercel  
