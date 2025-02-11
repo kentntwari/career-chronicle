@@ -3,7 +3,7 @@
 
   definePageMeta({
     layout: "home",
-  });;
+  });
 
   const { width: windowWidthSize } = useWindowSize();
 
@@ -45,10 +45,10 @@
 <template>
   <div class="container">
     <header
-      class="mt-[7.5rem] md:mt-0 md:h-[calc(100vh-4rem)] grid grid-cols-1 grid-rows-auto md:grid-rows-[60%_40%] lg:grid-rows-[75%_25%]"
+      class="mt-[7.5rem] lg:mt-40 md:h-[calc(100vh-4rem)] grid grid-cols-1 grid-rows-auto md:grid-rows-[60%_40%] lg:grid-rows-[70%_30%]"
     >
       <section
-        class="mt-0 lg:mt-40 grid grid-cols-2 sm:grid-cols-[auto_1fr_auto] grid-rows-[calc(2rem-6px)_auto_auto] md:grid-rows-[calc(1.75rem+2px)_auto] lg:grid-rows-[minmax(auto,2.625rem)_auto] justify-between gap-y-10 lg:gap-y-16"
+        class="grid grid-cols-2 sm:grid-cols-[auto_1fr_auto] grid-rows-[calc(2rem-6px)_auto_auto] md:grid-rows-[calc(1.75rem+2px)_auto] lg:grid-rows-[minmax(auto,2.625rem)_auto] justify-between gap-y-10 lg:gap-y-16"
       >
         <div
           class="div col-span-3 sm:col-start-2 md:col-start-1 md:mx-auto flex items-center px-3 w-full max-w-full sm:w-auto sm:max-w-fit h-[calc(2rem-6px)] sm:h-[calc(1.75rem+2px)] xl:h-[2.625rem] border border-[#654000] rounded-lg"
@@ -60,7 +60,7 @@
         </div>
         <div class="contents">
           <svgo-moon
-            class="-rotate-90 sm:rotate-0 sm:row-start-2 col-start-1 text-[5rem] sm:text-[7rem] xl:text-[200px] text-[#654000]"
+            class="-rotate-90 sm:rotate-0 sm:row-start-2 col-start-1 text-[5rem] sm:text-[7rem] lg:text-[8rem] xl:text-[200px] text-[#654000]"
           ></svgo-moon>
           <h1
             class="row-start-2 col-span-2 lg:col-span-1 lg:col-start-2 sm:justify-self-center md:max-w-[22.5rem] lg:max-w-[28rem] xl:max-w-[828px] font-bold sm:text-center text-2xl lg:text-3xl xl:text-[4rem] xl:leading-[110%] lg:tracking-[-0.03em] text-balance text-[#472d00]"
@@ -75,7 +75,7 @@
             >
           </h1>
           <svgo-moon
-            class="justify-self-end sm:justify-self-auto sm:row-start-2 text-[5rem] sm:text-[7rem] xl:text-[200px] -rotate-90 sm:rotate-180 text-[#654000]"
+            class="justify-self-end sm:justify-self-auto sm:row-start-2 text-[5rem] sm:text-[7rem] lg:text-[8rem] xl:text-[200px] -rotate-90 sm:rotate-180 text-[#654000]"
           ></svgo-moon>
         </div>
       </section>
@@ -95,7 +95,7 @@
             >
           </li>
           <li
-            class="md:max-w-[18.75rem] md:justify-self-end lg:justify-self-start"
+            class="md:max-w-[18.75rem] md:justify-self-end xl:justify-self-start"
           >
             <span class="block">2.</span>
             <span class="block"

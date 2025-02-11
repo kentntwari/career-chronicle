@@ -1,6 +1,9 @@
 <script lang="ts" setup>
   import { useToggle } from "@vueuse/core";
   import { cn } from "@/lib/cn";
+  defineOptions({
+    inheritAttrs: false,
+  });
 
   const [isOpen, setIsOpen] = useToggle(false);
 </script>
@@ -17,7 +20,7 @@
       <dialog-content
         :class="
           cn(
-            'fixed z-10 bottom-0 left-0 right-0 min-h-[340px] bg-[#fff] p-4',
+            'fixed z-10 md:top-1/2 bottom-0 md:bottom-auto left-0 md:left-1/2 right-0 md:right-auto min-h-[340px] bg-[#fff] p-4 md:rounded-lg md:-translate-x-1/2 md:-translate-y-1/2',
             $attrs.class!
           )
         "

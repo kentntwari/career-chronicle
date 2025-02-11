@@ -200,7 +200,7 @@
     <template #fallback>
       <app-skeleton-pageHeader target="POSITION" />
     </template>
-    <ui-dialog>
+    <ui-dialog class="min-h-48 md:min-w-[40vw] md:max-w-[500px]">
       <template #trigger="{ open }">
         <app-data-position-pageHeader
           :data="positions"
@@ -471,7 +471,7 @@
       </div>
       <div class="container flex-1 grid" v-else>
         <ul
-          class="px-3 mt-4 h-full flex xl:grid flex-col xl:grid-flow-col gap-3"
+          class="px-3 mt-4 h-full flex flex-col gap-3"
           v-show="route.name === routeNames.CURRENT_POSITION"
         >
           <li v-show="shouldOnboard">

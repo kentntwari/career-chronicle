@@ -231,7 +231,7 @@
       >
         <template #trigger="{ open }">
           <div
-            class="hidden lg:block lg:col-span-2 lg:space-y-2 lg:justify-self-end"
+            class="hidden lg:inline-block *:block lg:col-span-2 lg:space-y-2 lg:justify-self-end"
             v-if="width > 1024"
           >
             <dropdown-menu-root>
@@ -312,7 +312,7 @@
               <dropdown-menu-content
                 :align="'end'"
                 :align-offset="0"
-                class="lg:space-y-2 p-[5px] lg:*:p-0 lg:*:w-[44px] lg:*:h-9 min-w-28 min-h-16 bg-[#fff] lg:*:bg-[#fff] lg:bg-opacity-0 rounded-lg lg:*:rounded-md text-sm text-neutral-grey-1000 shadow-md lg:shadow-none"
+                class="w-32 *:px-2 *:py-[5px] lg:*:w-[44px] lg:*:h-9 min-w-28 min-h-16 bg-[#fff] rounded-lg text-sm text-neutral-grey-1000 shadow-md lg:shadow-none"
                 @interact-outside="preventClosingDropdown($event)"
               >
                 <dropdown-menu-item

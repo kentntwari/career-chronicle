@@ -16,7 +16,8 @@
     <br />
     <p>
       Hit the <span class="lg:hidden">"+" </span>
-      <span class="hidden lg:block">“ADD NEW” </span> button when you’re ready.
+      <span class="hidden lg:inline-block">“ADD NEW” </span> button when you’re
+      ready.
     </p>
   </div>
   <div
@@ -29,7 +30,8 @@
     <br />
     <p>
       Hit the <span class="lg:hidden">"+" </span>
-      <span class="hidden lg:block">“ADD NEW” </span>button to get started.
+      <span class="hidden lg:inline-block">“ADD NEW” </span>button to get
+      started.
     </p>
   </div>
   <div v-else-if="currentBenchmark === benchmarks.FAILURES" class="font-medium">
@@ -45,7 +47,8 @@
     <p>They are designed to make you shine.</p>
     <br />
     <p>
-      Hit the <span class="hidden lg:block">“ADD NEW” </span> button to get
+      Hit the <span class="lg:hidden">"+"</span>
+      <span class="hidden lg:inline-block">“ADD NEW” </span> button to get
       started.
     </p>
   </div>

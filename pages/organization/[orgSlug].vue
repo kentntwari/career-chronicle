@@ -161,7 +161,9 @@
     class="flex-1 flex flex-col"
     v-else-if="computedOrganization.hasCreatedPositionBefore === false"
   >
-    <div class="mt-[4.5rem] ctainer max-w-[366px] text-balance font-medium">
+    <div
+      class="mt-[4.5rem] container *:max-w-[366px] lg:*:max-w-[500px] text-balance font-medium"
+    >
       <p>
         It seems you haven’t registered any checkpoint in your journey at this
         organization.

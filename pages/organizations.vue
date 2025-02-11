@@ -138,7 +138,7 @@
                 :key="org.slug"
                 :class="[
                   isDeleting ? 'dialog-delete' : '',
-                  isPatching ? 'min-h-48 rounded-t-lg' : '',
+                  isPatching ? 'min-h-48 md:min-w-[40vw] rounded-t-lg' : '',
                 ]"
               >
                 <template #trigger="{ open }">
@@ -204,7 +204,7 @@
               </ui-dialog>
             </div>
 
-            <ui-dialog>
+            <ui-dialog class="md:min-h-0">
               <template #trigger="{ open: createOrganization }">
                 <app-create-organization-btn
                   :data="organizations ?? []"
