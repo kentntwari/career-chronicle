@@ -1,6 +1,9 @@
 <script setup lang="ts">
   import type { Plan } from "@prisma/client";
 
+  import { Analytics as VercelAnalytics } from "@vercel/analytics/nuxt";
+  import { SpeedInsights as VercelSpeedInsights } from "@vercel/speed-insights/nuxt";
+
   useHead({
     title: "Career Journey",
     htmlAttrs: {
@@ -25,5 +28,7 @@
 <template>
   <NuxtLayout>
     <NuxtPage />
+    <VercelAnalytics />
+    <VercelSpeedInsights />
   </NuxtLayout>
 </template>
